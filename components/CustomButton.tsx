@@ -1,7 +1,8 @@
 import React from "react";
 import { TouchableOpacity, Text, StyleSheet } from "react-native";
 import { lightTheme, darkTheme } from "../themes/themes";
-import { useColorScheme } from "react-native";
+import { useContext } from "react";
+import { ThemeContext } from "../context/ThemeContext";
 const CustomButton = ({
   title,
   onPress,
@@ -9,18 +10,14 @@ const CustomButton = ({
   textColor = "#fff",
   disabled = false,
 }) => {
-  const scheme = useColorScheme();
+  const { theme, setMode, mode } = useContext(ThemeContext);
 
   return (
     <TouchableOpacity
       style={[
         styles.button,
         {
-          backgroundColor: disabled
-            ? "#aaa"
-            : scheme === "dark"
-            ? darkTheme.primary
-            : lightTheme.primary,
+          backgroundColor: disabled ? "#aaa" : theme.primary,
         },
       ]}
       disabled={disabled}
@@ -31,10 +28,7 @@ const CustomButton = ({
         style={[
           styles.text,
           {
-            color:
-              scheme === "dark"
-                ? lightTheme.textprimary
-                : darkTheme.textprimary,
+            color: darkTheme.textprimary,
           },
         ]}
       >

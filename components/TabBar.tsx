@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Pressable,
-  Text,
-  StyleSheet,
-  LayoutChangeEvent,
-  useColorScheme,
-} from "react-native";
+import { View, Pressable, StyleSheet, LayoutChangeEvent } from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import Animated, {
   interpolate,
@@ -15,9 +8,10 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { Feather } from "@expo/vector-icons";
-import { opacity } from "react-native-reanimated/lib/typescript/Colors";
 import { lightTheme, darkTheme } from "../themes/themes";
 import * as Haptics from "expo-haptics";
+import { useContext } from "react";
+import { ThemeContext } from "../context/ThemeContext";
 const icons: Record<string, keyof typeof Feather.glyphMap> = {
   home: "home",
   profile: "user",
@@ -27,7 +21,7 @@ const icons: Record<string, keyof typeof Feather.glyphMap> = {
 };
 
 const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
-  const scheme = useColorScheme();
+  const { theme, mode, setMode } = useContext(ThemeContext);
   const [dimensions, setDimensions] = useState({ height: 20, width: 100 });
 
   const buttonWidth = dimensions.width / state.routes.length;
@@ -49,14 +43,16 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
     };
   });
   return (
-    <View style={styles.tabBar} onLayout={onTabbarLayout}>
+    <View
+      style={[styles.tabBar, { backgroundColor: theme.surface }]}
+      onLayout={onTabbarLayout}
+    >
       <Animated.View
         style={[
           animatedStyle,
           {
             position: "absolute",
-            backgroundColor:
-              scheme === "dark" ? darkTheme.primary : lightTheme.primary,
+            backgroundColor: theme.primary,
             borderRadius: 30,
             marginHorizontal: 6,
             height: 60,
@@ -90,22 +86,6 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
           }
           Haptics.selectionAsync();
         };
-
-        // Bouton central "+"
-        // if (route.name === "add") {
-        //   return (
-        //     <Pressable
-        //       key={route.key}
-        //       onPress={onPress}
-        //       style={styles.addButtonContainer}
-        //     >
-        //       <View style={styles.addButton}>
-        //         <Feather name="plus" size={28} color="#FFF" />
-        //       </View>
-        //     </Pressable>
-        //   );
-        // }
-
         // Animation sur les icônes
         const scale = useSharedValue(0);
         useEffect(() => {
@@ -137,23 +117,13 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
               <Feather
                 name={icons[route.name]}
                 size={22}
-                color={
-                  isFocused
-                    ? "#FFF"
-                    : scheme === "dark"
-                    ? darkTheme.primary
-                    : lightTheme.primary
-                }
+                color={isFocused ? theme.surface : theme.primary}
               />
             </Animated.View>
             <Animated.Text
               style={[
                 {
-                  color: isFocused
-                    ? "#FFF"
-                    : scheme === "dark"
-                    ? darkTheme.primary
-                    : lightTheme.primary,
+                  color: isFocused ? theme.surface : theme.primary,
                   fontSize: 14,
                 },
                 animatedTextStyle,
@@ -177,7 +147,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#fff",
     marginHorizontal: 20,
     paddingVertical: 15,
     shadowColor: "#000",

@@ -3,27 +3,25 @@ import {
   StyleSheet,
   Text,
   View,
-  useColorScheme,
   Alert,
-  TextInput,
   Button,
 } from "react-native";
 import React from "react";
 import { useState } from "react";
 import { supabase } from "../../lib/supabase";
-import { darkTheme, lightTheme } from "../../themes/themes";
 import Input from "../../components/Input";
 import { Dimensions } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import CustomButton from "../../components/CustomButton";
-
+import { useContext } from "react";
+import { ThemeContext } from "../../context/ThemeContext";
 const { width, height } = Dimensions.get("window");
 
 const LoginScreen = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const scheme = useColorScheme();
+  const { theme, setMode, mode } = useContext(ThemeContext);
   async function signInWithEmail() {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
@@ -40,8 +38,7 @@ const LoginScreen = () => {
       style={[
         styles.container,
         {
-          backgroundColor:
-            scheme === "dark" ? darkTheme.background : lightTheme.background,
+          backgroundColor: theme.background,
         },
       ]}
     >
@@ -49,7 +46,7 @@ const LoginScreen = () => {
         style={[
           styles.title,
           {
-            color: scheme === "dark" ? darkTheme.primary : lightTheme.primary,
+            color: theme.primary,
           },
         ]}
       >
@@ -77,11 +74,6 @@ const LoginScreen = () => {
       </View>
 
       <View style={[styles.verticallySpaced, styles.mt20]}>
-        {/* <Button
-          title="Se connecter"
-          disabled={loading}
-          onPress={() => signInWithEmail()}
-        /> */}
         <CustomButton
           onPress={() => signInWithEmail()}
           title="Se connecter"

@@ -18,6 +18,8 @@ import dayjs from "dayjs";
 import "dayjs/locale/fr";
 import { darkTheme, lightTheme } from "../themes/themes";
 import * as Haptics from "expo-haptics";
+import { useContext } from "react";
+import { ThemeContext } from "../context/ThemeContext";
 
 const { width, height } = Dimensions.get("window");
 const events = [
@@ -61,7 +63,7 @@ const events = [
 const BUTTONS = ["day", "week", "month"];
 
 const CustomCalendar = () => {
-  const scheme = useColorScheme();
+  const { theme } = useContext(ThemeContext);
   const [mode, setMode] = useState("week");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [dateToString, setDateToString] = useState("");
@@ -106,11 +108,7 @@ const CustomCalendar = () => {
                 style={[
                   styles.buttonText,
                   {
-                    color: isActive
-                      ? "#FFF"
-                      : scheme === "dark"
-                      ? darkTheme.primary
-                      : lightTheme.primary, // texte blanc si actif, bleu sinon
+                    color: isActive ? "#FFF" : theme.primary, // texte blanc si actif, bleu sinon
                   },
                 ]}
               >
@@ -124,8 +122,7 @@ const CustomCalendar = () => {
             styles.slider,
             animatedStyle,
             {
-              backgroundColor:
-                scheme === "dark" ? darkTheme.primary : lightTheme.primary,
+              backgroundColor: theme.primary,
               width: 100,
             },
           ]}
@@ -138,10 +135,7 @@ const CustomCalendar = () => {
           style={[
             { fontSize: 20, fontWeight: "bold" },
             {
-              color:
-                scheme === "dark"
-                  ? darkTheme.textprimary
-                  : lightTheme.textprimary,
+              color: theme.textprimary,
             },
           ]}
         >

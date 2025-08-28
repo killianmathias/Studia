@@ -6,17 +6,15 @@ import {
   TextInputProps,
   ViewStyle,
   TextStyle,
-  useColorScheme,
-  Touchable,
   TouchableOpacity,
 } from "react-native";
 import { darkTheme, lightTheme } from "../themes/themes";
 import { Dimensions } from "react-native";
 import { useState } from "react";
-
-const { width, height } = Dimensions.get("window");
-
 import { Ionicons } from "@expo/vector-icons";
+import { useContext } from "react";
+import { ThemeContext } from "../context/ThemeContext";
+const { width, height } = Dimensions.get("window");
 
 interface InputProps extends TextInputProps {
   icon?: keyof typeof Ionicons.glyphMap; // Sécurité sur les noms d'icônes Ionicons
@@ -42,7 +40,7 @@ const Input: React.FC<InputProps> = ({
   number = 1,
   ...props
 }) => {
-  const scheme = useColorScheme();
+  const { theme, setMode, mode } = useContext(ThemeContext);
   const [visible, setVisible] = useState(false);
   return (
     <View
@@ -50,12 +48,10 @@ const Input: React.FC<InputProps> = ({
         styles.container,
         containerStyle,
         {
-          backgroundColor:
-            scheme === "dark" ? darkTheme.surface : lightTheme.surface,
+          backgroundColor: theme.surface,
         },
         {
-          borderColor:
-            scheme === "dark" ? darkTheme.primary : lightTheme.primary,
+          borderColor: theme.primary,
         },
         { width: (width * 0.9) / number - (number - 1) * 5 },
       ]}
@@ -64,7 +60,7 @@ const Input: React.FC<InputProps> = ({
         <Ionicons
           name={icon}
           size={height * 0.035}
-          color={scheme === "dark" ? darkTheme.primary : lightTheme.primary}
+          color={theme.primary}
           style={styles.icon}
         />
       )}
@@ -74,16 +70,11 @@ const Input: React.FC<InputProps> = ({
           inputStyle,
           style,
           {
-            color:
-              scheme === "dark"
-                ? darkTheme.textprimary
-                : lightTheme.textprimary,
+            color: theme.textprimary,
           },
         ]}
         placeholder={placeholder}
-        placeholderTextColor={
-          scheme === "dark" ? darkTheme.primary : lightTheme.primary
-        }
+        placeholderTextColor={theme.primary}
         value={value}
         onChangeText={onChangeText}
         secureTextEntry={!visible && type === "password"}
@@ -95,7 +86,7 @@ const Input: React.FC<InputProps> = ({
           <Ionicons
             name={visible ? "eye-off" : "eye"}
             size={height * 0.035}
-            color={scheme === "dark" ? darkTheme.primary : lightTheme.primary}
+            color={theme.primary}
             style={styles.icon}
           />
         </TouchableOpacity>

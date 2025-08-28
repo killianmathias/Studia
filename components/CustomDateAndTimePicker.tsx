@@ -1,20 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import {
   View,
   Text,
   Modal,
   TouchableOpacity,
   StyleSheet,
-  useColorScheme,
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
-import { darkTheme, lightTheme } from "../themes/themes";
-const { width, height } = Dimensions.get("window");
-import { useContext } from "react";
 import { ThemeContext } from "../context/ThemeContext";
-const CustomDatePicker = ({ value, onChange }) => {
+
+const { width, height } = Dimensions.get("window");
+
+const CustomDateAndTimePicker = ({ value, onChange }) => {
   const today = new Date();
   const [visible, setVisible] = useState(false);
 
@@ -25,79 +24,75 @@ const CustomDatePicker = ({ value, onChange }) => {
   const [year, setYear] = useState(
     value ? value.getFullYear() : today.getFullYear()
   );
-  const { theme, mode, setMode } = useContext(ThemeContext);
 
-  // 🔹 Fonction utilitaire : nb de jours d’un mois donné
+  const [hour, setHour] = useState(value ? value.getHours() : today.getHours());
+  const [minute, setMinute] = useState(
+    value ? value.getMinutes() : today.getMinutes()
+  );
+
+  const { theme } = useContext(ThemeContext);
+
   const getDaysInMonth = (m, y) => new Date(y, m, 0).getDate();
 
-  // Génération dynamique des options
   const days = Array.from(
     { length: getDaysInMonth(month, year) },
     (_, i) => i + 1
   );
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
-  const years = Array.from(
-    { length: 100 },
-    (_, i) => today.getFullYear() - 100 + i + 1
-  ); // croissant
+  const years = Array.from({ length: 5 }, (_, i) => today.getFullYear() + i);
 
-  // ✅ Si le jour sélectionné est trop grand (ex: 31 → février), on le corrige
-  if (day > getDaysInMonth(month, year)) {
-    setDay(getDaysInMonth(month, year));
-  }
+  const hours = Array.from({ length: 24 }, (_, i) => i);
+  const minutes = Array.from({ length: 12 }, (_, i) => i * 5);
+
+  useEffect(() => {
+    if (day > getDaysInMonth(month, year)) setDay(getDaysInMonth(month, year));
+  }, [month, year]);
 
   const confirmDate = () => {
-    const selectedDate = new Date(year, month - 1, day);
+    const selectedDate = new Date(year, month - 1, day, hour, minute);
     onChange(selectedDate);
     setVisible(false);
   };
 
+  const formatValue = (val) => val.toString().padStart(2, "0");
+
   return (
     <View>
       <TouchableOpacity
-        style={[
-          styles.input,
-          {
-            borderColor: theme.primary,
-          },
-        ]}
+        style={[styles.input, { borderColor: theme.primary }]}
         onPress={() => setVisible(true)}
       >
         <Ionicons
-          name={"calendar"}
+          name="calendar"
           size={height * 0.035}
           color={theme.primary}
           style={styles.icon}
         />
-        <Text
-          style={{
-            color: theme.textprimary,
-          }}
-        >
+        <Text style={{ color: theme.textprimary }}>
           {value
-            ? `${value.getDate().toString().padStart(2, "0")}/${(
+            ? `${formatValue(value.getDate())}/${formatValue(
                 value.getMonth() + 1
-              )
-                .toString()
-                .padStart(2, "0")}/${value.getFullYear()}`
-            : `${today.getDate().toString().padStart(2, "0")}/${(
+              )}/${value.getFullYear()} ${formatValue(
+                value.getHours()
+              )}:${formatValue(value.getMinutes())}`
+            : `${formatValue(today.getDate())}/${formatValue(
                 today.getMonth() + 1
-              )
-                .toString()
-                .padStart(2, "0")}/${today.getFullYear()}`}
+              )}/${today.getFullYear()} ${formatValue(
+                today.getHours()
+              )}:${formatValue(today.getMinutes())}`}
         </Text>
       </TouchableOpacity>
 
       <Modal visible={visible} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.title}>Sélectionner une date</Text>
+            <Text style={styles.title}>Sélectionner date et heure</Text>
 
             <View style={styles.pickers}>
               <Picker
                 selectedValue={day}
                 onValueChange={setDay}
-                style={[styles.picker, { width: 100 }]}
+                style={styles.picker}
               >
                 {days.map((d) => (
                   <Picker.Item
@@ -112,7 +107,7 @@ const CustomDatePicker = ({ value, onChange }) => {
               <Picker
                 selectedValue={month}
                 onValueChange={setMonth}
-                style={[styles.picker, { width: 120 }]}
+                style={styles.picker}
               >
                 {months.map((m) => (
                   <Picker.Item
@@ -127,13 +122,45 @@ const CustomDatePicker = ({ value, onChange }) => {
               <Picker
                 selectedValue={year}
                 onValueChange={setYear}
-                style={[styles.picker, { width: 120 }]}
+                style={styles.picker}
               >
                 {years.map((y) => (
                   <Picker.Item
                     key={y}
                     label={y.toString()}
                     value={y}
+                    color={theme.primary}
+                  />
+                ))}
+              </Picker>
+            </View>
+
+            <View style={styles.pickers}>
+              <Picker
+                selectedValue={hour}
+                onValueChange={setHour}
+                style={styles.picker}
+              >
+                {hours.map((h) => (
+                  <Picker.Item
+                    key={h}
+                    label={formatValue(h)}
+                    value={h}
+                    color={theme.primary}
+                  />
+                ))}
+              </Picker>
+
+              <Picker
+                selectedValue={minute}
+                onValueChange={setMinute}
+                style={styles.picker}
+              >
+                {minutes.map((m) => (
+                  <Picker.Item
+                    key={m}
+                    label={formatValue(m)}
+                    value={m}
                     color={theme.primary}
                   />
                 ))}
@@ -158,7 +185,7 @@ const CustomDatePicker = ({ value, onChange }) => {
   );
 };
 
-export default CustomDatePicker;
+export default CustomDateAndTimePicker;
 
 const styles = StyleSheet.create({
   input: {
@@ -168,7 +195,7 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     flexDirection: "row",
     alignItems: "center",
-    width: 0.35 * width,
+    width: 0.45 * width,
     justifyContent: "center",
   },
   modalContainer: {
@@ -188,28 +215,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     textAlign: "center",
   },
-  pickers: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  picker: {
-    flex: 1,
-  },
-  actions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    marginTop: 16,
-  },
-  cancel: {
-    padding: 10,
-    marginRight: 10,
-  },
-  confirm: {
-    backgroundColor: "#007bff",
-    padding: 10,
-    borderRadius: 8,
-  },
-  icon: {
-    marginRight: 8,
-  },
+  pickers: { flexDirection: "row", justifyContent: "space-between" },
+  picker: { flex: 1 },
+  actions: { flexDirection: "row", justifyContent: "flex-end", marginTop: 16 },
+  cancel: { padding: 10, marginRight: 10 },
+  confirm: { backgroundColor: "#007bff", padding: 10, borderRadius: 8 },
+  icon: { marginRight: 8 },
 });

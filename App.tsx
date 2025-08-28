@@ -21,6 +21,10 @@ import TabBar from "./components/TabBar"; // 👈 import corrigé
 import CalendarScreen from "./screens/CalendarScreen";
 import { Alert } from "react-native";
 import RegisterScreen from "./screens/Auth/RegisterScreen";
+import AddExamScreen from "./screens/AddExamScreen";
+import SettingsScreen from "./screens/SettingsScreen";
+import { ThemeContext, ThemeProvider } from "./context/ThemeContext";
+import { useContext } from "react";
 
 // --- Définition des types de navigation ---
 export type RootStackParamList = {
@@ -35,35 +39,6 @@ export type RootTabParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<RootTabParamList>();
-
-async function logOut() {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user != null) {
-    let { error } = supabase.auth.signOut();
-    if (error) Alert.alert(error.message);
-  }
-}
-// --- Screens ---
-function ProfileScreen() {
-  return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <Text>Profil</Text>
-      <TouchableOpacity onPress={() => logOut()}>
-        <Text>Se Déconnecter</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-function AddScreen() {
-  return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <Text>Ajouter quelque chose 🚀</Text>
-    </View>
-  );
-}
 
 // --- Tabs visibles après connexion ---
 function MainTabs() {
@@ -84,17 +59,17 @@ function MainTabs() {
       />
       <Tab.Screen
         name="add"
-        component={AddScreen}
+        component={AddExamScreen}
         options={{ tabBarLabel: "Ajouter" }}
       />
       <Tab.Screen
         name="profile"
-        component={ProfileScreen}
+        component={SettingsScreen}
         options={{ tabBarLabel: "Profil" }}
       />
       <Tab.Screen
         name="settings"
-        component={ProfileScreen}
+        component={SettingsScreen}
         options={{ tabBarLabel: "Réglages" }}
       />
     </Tab.Navigator>
@@ -104,7 +79,7 @@ function MainTabs() {
 // --- App principale ---
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
-  const scheme = useColorScheme();
+  const { theme, setMode, mode } = useContext(ThemeContext);
   const [session, setSession] = useState<Session | null>(null);
 
   useEffect(() => {
@@ -128,24 +103,26 @@ export default function App() {
   }, []);
 
   return (
-    <NavigationContainer>
-      {isLoggedIn ? (
-        <MainTabs />
-      ) : (
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen
-            name="Connexion"
-            component={LoginScreen}
-            options={{ animation: "none" }}
-          />
-          <Stack.Screen
-            name="Register"
-            component={RegisterScreen}
-            options={{ animation: "none" }}
-          />
-        </Stack.Navigator>
-      )}
-    </NavigationContainer>
+    <ThemeProvider>
+      <NavigationContainer>
+        {isLoggedIn ? (
+          <MainTabs />
+        ) : (
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen
+              name="Connexion"
+              component={LoginScreen}
+              options={{ animation: "none" }}
+            />
+            <Stack.Screen
+              name="Register"
+              component={RegisterScreen}
+              options={{ animation: "none" }}
+            />
+          </Stack.Navigator>
+        )}
+      </NavigationContainer>
+    </ThemeProvider>
   );
 }
 

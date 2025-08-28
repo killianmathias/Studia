@@ -1,4 +1,15 @@
 // themes.ts
+export type Theme = {
+  primary: string;
+  secondary: string;
+  background: string;
+  surface: string;
+  textprimary: string;
+  textsecondary: string;
+  success: string;
+  warning: string;
+  error: string;
+};
 export const lightTheme = {
   primary: "#3B82F6",
   secondary: "#6366F1",

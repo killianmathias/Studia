@@ -17,6 +17,8 @@ import CustomButton from "../../components/CustomButton";
 import CustomDatePicker from "../../components/CustomDatePicker";
 import LevelPicker from "../../components/LevelPicker";
 import { Checkbox } from "expo-checkbox";
+import { useContext } from "react";
+import { ThemeContext } from "../../context/ThemeContext";
 
 const { width, height } = Dimensions.get("window");
 
@@ -43,8 +45,7 @@ const RegisterScreen = () => {
   const [checked, setChecked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [age, setAge] = useState(0);
-  const today = new Date();
-  const scheme = useColorScheme();
+  const { theme, mode, setMode } = useContext(ThemeContext);
 
   useEffect(() => {
     if (dateOfBirth) {
@@ -95,8 +96,7 @@ const RegisterScreen = () => {
       style={[
         styles.container,
         {
-          backgroundColor:
-            scheme === "dark" ? darkTheme.background : lightTheme.background,
+          backgroundColor: theme.background,
         },
       ]}
     >
@@ -104,7 +104,7 @@ const RegisterScreen = () => {
         style={[
           styles.title,
           {
-            color: scheme === "dark" ? darkTheme.primary : lightTheme.primary,
+            color: theme.primary,
           },
         ]}
       >
@@ -160,13 +160,7 @@ const RegisterScreen = () => {
           style={styles.checkbox}
           value={checked}
           onValueChange={() => setChecked(!checked)}
-          color={
-            checked
-              ? scheme === "dark"
-                ? darkTheme.primary
-                : lightTheme.primary
-              : undefined
-          }
+          color={checked ? theme.primary : undefined}
         />
         <Text>J'accepte les conditions d'utilisation</Text>
       </View>

@@ -5,17 +5,18 @@ import {
   Modal,
   TouchableOpacity,
   StyleSheet,
-  useColorScheme,
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { darkTheme, lightTheme } from "../themes/themes";
+import { useContext } from "react";
+import { ThemeContext } from "../context/ThemeContext";
 const { width, height } = Dimensions.get("window");
 const LevelPicker = ({ value, onChange }) => {
-  const scheme = useColorScheme();
+  const { theme, mode, setMode } = useContext(ThemeContext);
   const options = ["Collège", "Lycée", "Université", "Autre"];
-  const textColor = scheme === "dark" ? darkTheme.primary : lightTheme.primary;
+  const textColor = theme.textprimary;
   const [visible, setVisible] = useState(false);
   const [level, setLevel] = useState(options[0]);
 
@@ -31,8 +32,7 @@ const LevelPicker = ({ value, onChange }) => {
         style={[
           styles.input,
           {
-            borderColor:
-              scheme === "dark" ? darkTheme.primary : lightTheme.primary,
+            borderColor: theme.primary,
           },
         ]}
         onPress={() => setVisible(true)}
@@ -40,15 +40,12 @@ const LevelPicker = ({ value, onChange }) => {
         <Ionicons
           name={"school"}
           size={height * 0.035}
-          color={scheme === "dark" ? darkTheme.primary : lightTheme.primary}
+          color={theme.primary}
           style={styles.icon}
         />
         <Text
           style={{
-            color:
-              scheme === "dark"
-                ? darkTheme.textprimary
-                : lightTheme.textprimary,
+            color: theme.primary,
           }}
         >
           {level}
