@@ -19,6 +19,8 @@ import LevelPicker from "../../components/LevelPicker";
 import { Checkbox } from "expo-checkbox";
 import { useContext } from "react";
 import { ThemeContext } from "../../context/ThemeContext";
+import LoginWithGoogle from "./LoginWithGoogle";
+import { SignInWithApple } from "./SignInWithApple";
 
 const { width, height } = Dimensions.get("window");
 
@@ -34,6 +36,7 @@ function calculateAge(birthDate) {
   }
   return age;
 }
+// ... imports identiques
 
 const RegisterScreen = () => {
   const [email, setEmail] = useState("");
@@ -45,7 +48,7 @@ const RegisterScreen = () => {
   const [checked, setChecked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [age, setAge] = useState(0);
-  const { theme, mode, setMode } = useContext(ThemeContext);
+  const { theme } = useContext(ThemeContext);
 
   useEffect(() => {
     if (dateOfBirth) {
@@ -58,39 +61,77 @@ const RegisterScreen = () => {
     if (email === "" || surname === "" || name === "" || password === "") {
       Alert.alert("Veuillez remplir tous les champs");
       setLoading(false);
-    } else if (!checked) {
+      return;
+    }
+    if (!checked) {
       Alert.alert("Erreur", "Veuillez accepter les conditions d'utilisation");
       setLoading(false);
-    } else if (age < 12) {
+      return;
+    }
+    if (age < 12) {
       Alert.alert("Vous n'avez pas l'âge requis pour vous inscrire sur Studia");
       setLoading(false);
-    } else {
-      const { data, error } = await supabase.auth.signUp({
-        email: email,
-        password: password,
-      });
-      if (error) Alert.alert(error.message);
-      if (data.user) {
-        signUpDatabase(data.user?.id);
-      }
+      return;
     }
-  }
-  async function signUpDatabase(uuid) {
-    const { data, error } = await supabase.from("User").insert([
-      {
-        id: uuid,
-        date_of_birth: dateOfBirth,
-        surname: surname,
-        name: name,
-        level: level,
-      },
-    ]);
+
+    const { data, error } = await supabase.auth.signUp({
+      email: email,
+      password: password,
+    });
+
     if (error) {
-      Alert.alert("Erreur lors de la création du profil", error.message);
+      Alert.alert(error.message);
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+
+    if (data.user) {
+      await signUpDatabase(data.user);
+    }
   }
+
+  async function signUpDatabase(authUser) {
+    try {
+      // 1. Créer l'entrée dans la table "users"
+      const { data: newUser, error: userError } = await supabase
+        .from("Users")
+        .insert([
+          {
+            email: authUser.email,
+            name: name,
+            surname: surname,
+            level: level,
+            date_of_birth: dateOfBirth,
+          },
+        ])
+        .select()
+        .single();
+
+      if (userError) throw userError;
+
+      // 2. Créer le mapping avec auth.users
+      const { error: providerError } = await supabase
+        .from("User_providers")
+        .insert([
+          {
+            user_id: newUser.id,
+            provider_user_id: authUser.id,
+            provider: "email",
+          },
+        ]);
+
+      if (providerError) throw providerError;
+
+      Alert.alert("Inscription réussie !");
+    } catch (err) {
+      Alert.alert("Erreur lors de l'inscription", err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const navigation = useNavigation();
+
   return (
     <SafeAreaView
       style={[
@@ -110,6 +151,7 @@ const RegisterScreen = () => {
       >
         Inscription
       </Text>
+
       <View style={[styles.verticallySpaced, styles.mt20, styles.names]}>
         <Input
           icon="person"
@@ -128,6 +170,7 @@ const RegisterScreen = () => {
           number={2}
         />
       </View>
+
       <View style={[styles.verticallySpaced]}>
         <Input
           icon="mail"
@@ -149,10 +192,12 @@ const RegisterScreen = () => {
           type="password"
         />
       </View>
+
       <View style={[styles.verticallySpaced, styles.pickers]}>
         <CustomDatePicker value={dateOfBirth} onChange={setDateOfBirth} />
         <LevelPicker value={level} onChange={setLevel} />
       </View>
+
       <View
         style={[styles.verticallySpaced, styles.mt20, styles.checkboxContainer]}
       >
@@ -172,6 +217,17 @@ const RegisterScreen = () => {
           onPress={() => signUpWithEmail()}
         />
       </View>
+
+      <View style={styles.lineContainer}>
+        <View style={styles.line} />
+        <Text style={styles.text}>ou alors inscrivez-vous via</Text>
+        <View style={styles.line} />
+      </View>
+
+      {/* Ici tu pourras ajouter LoginWithGoogle + SignInWithApple avec la même logique */}
+      {/* <LoginWithGoogle /> */}
+      <SignInWithApple />
+
       <View style={[styles.verticallySpaced, styles.mt20]}>
         <Text style={styles.textLogin}>Vous avez déjà un compte ? </Text>
         <Button
@@ -183,9 +239,7 @@ const RegisterScreen = () => {
     </SafeAreaView>
   );
 };
-
 export default RegisterScreen;
-
 const styles = StyleSheet.create({
   container: {
     padding: 12,
@@ -227,5 +281,21 @@ const styles = StyleSheet.create({
   checkbox: {},
   textLogin: {
     fontSize: 18,
+  },
+  lineContainer: {
+    flexDirection: "row", // place les éléments en ligne
+    alignItems: "center", // aligne verticalement
+    marginVertical: 20,
+    width: "70%",
+  },
+  line: {
+    flex: 1, // prend tout l’espace dispo
+    height: 1,
+    backgroundColor: "#000",
+  },
+  text: {
+    marginHorizontal: 10, // espace entre le texte et les lignes
+    fontSize: 14,
+    color: "#333",
   },
 });

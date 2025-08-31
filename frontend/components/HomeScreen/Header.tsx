@@ -5,41 +5,54 @@ import {
   Image,
   TouchableOpacity,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import ThemedText from "../Themed/ThemedText";
 import ThemedSafeAreaView from "../Themed/ThemedSafeAreaView";
 import { supabase } from "../../lib/supabase";
-import { blue } from "react-native-reanimated/lib/typescript/Colors";
 import { ThemeContext } from "../../context/ThemeContext";
-import { useContext } from "react";
 
 const { width, height } = Dimensions.get("window");
 
-async function fetchUserId() {
+// 1️⃣ Récupérer l'utilisateur Supabase Auth
+async function fetchAuthUser() {
   const {
     data: { user },
     error,
   } = await supabase.auth.getUser();
-  if (error) {
-    console.error("Erreur récupération utilisateur :", error.message);
+  if (error || !user) {
+    console.error("Erreur récupération utilisateur :", error?.message);
     return null;
   }
-  return user.id;
+  return user;
 }
 
+// 2️⃣ Mapper vers users.id via user_providers
 async function fetchUser() {
-  const userId = await fetchUserId();
-  if (!userId) return "";
+  const authUser = await fetchAuthUser();
+  if (!authUser) return null;
 
-  const { data: user, error } = await supabase
-    .from("User")
+  const { data: providerData, error: providerError } = await supabase
+    .from("User_providers")
+    .select("user_id")
+    .eq("provider_user_id", authUser.id)
+    .maybeSingle();
+
+  if (providerError || !providerData) {
+    console.error("Erreur mapping user_providers :", providerError?.message);
+    return null;
+  }
+
+  const userId = providerData.user_id;
+
+  const { data: user, error: userError } = await supabase
+    .from("Users")
     .select("*")
     .eq("id", userId)
     .single();
 
-  if (error) {
-    console.error("Erreur récupération username :", error.message);
-    return "";
+  if (userError) {
+    console.error("Erreur récupération user :", userError.message);
+    return null;
   }
   return user;
 }
@@ -54,9 +67,8 @@ const Header = () => {
 
   useEffect(() => {
     const loadUser = async () => {
-      const user = await fetchUser();
-      setUser(user);
-      console.log(user);
+      const userData = await fetchUser();
+      if (userData) setUser(userData);
     };
     loadUser();
   }, []);
@@ -71,8 +83,11 @@ const Header = () => {
       <View style={styles.profilePicture}>
         <TouchableOpacity onPress={() => console.log(user.profile_picture)}>
           <Image
-            source={{ uri: encodeURI(user.profile_picture) }}
-            defaultSource={require("../../assets/default-profile.png")}
+            source={
+              user.profile_picture
+                ? { uri: encodeURI(user.profile_picture) }
+                : require("../../assets/default-profile.png")
+            }
             style={styles.profilePictureImage}
           />
         </TouchableOpacity>
