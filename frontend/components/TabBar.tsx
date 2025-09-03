@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { View, Pressable, StyleSheet, LayoutChangeEvent } from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import Animated, {
@@ -8,10 +8,9 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { Feather } from "@expo/vector-icons";
-import { lightTheme, darkTheme } from "../themes/themes";
 import * as Haptics from "expo-haptics";
-import { useContext } from "react";
 import { ThemeContext } from "../context/ThemeContext";
+
 const icons: Record<string, keyof typeof Feather.glyphMap> = {
   home: "home",
   profile: "user",
@@ -21,10 +20,11 @@ const icons: Record<string, keyof typeof Feather.glyphMap> = {
 };
 
 const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
-  const { theme, mode, setMode } = useContext(ThemeContext);
+  const { theme } = useContext(ThemeContext);
   const [dimensions, setDimensions] = useState({ height: 20, width: 100 });
 
   const buttonWidth = dimensions.width / state.routes.length;
+
   const onTabbarLayout = (e: LayoutChangeEvent) => {
     setDimensions({
       height: e.nativeEvent.layout.height,
@@ -33,6 +33,14 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
   };
 
   const tabPositionX = useSharedValue(0);
+
+  // ✅ Met à jour la position du highlight quand l'onglet actif change
+  useEffect(() => {
+    tabPositionX.value = withSpring(buttonWidth * state.index, {
+      duration: 1500,
+    });
+  }, [state.index, buttonWidth, tabPositionX]);
+
   const animatedStyle = useAnimatedStyle(() => {
     return {
       transform: [
@@ -42,11 +50,13 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
       ],
     };
   });
+
   return (
     <View
       style={[styles.tabBar, { backgroundColor: theme.surface }]}
       onLayout={onTabbarLayout}
     >
+      {/* Highlight animé */}
       <Animated.View
         style={[
           animatedStyle,
@@ -72,9 +82,6 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
         const isFocused = state.index === index;
 
         const onPress = () => {
-          tabPositionX.value = withSpring(buttonWidth * index, {
-            duration: 1500,
-          });
           const event = navigation.emit({
             type: "tabPress",
             target: route.key,
@@ -86,31 +93,28 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
           }
           Haptics.selectionAsync();
         };
-        // Animation sur les icônes
+
+        // Animation sur l’icône
         const scale = useSharedValue(0);
+
         useEffect(() => {
-          scale.value = withSpring(
-            typeof isFocused === "boolean" ? (isFocused ? 1 : 0) : isFocused,
-            { duration: 350 }
-          );
+          scale.value = withSpring(isFocused ? 1 : 0, { duration: 350 });
         }, [isFocused, scale]);
 
         const animatedTextStyle = useAnimatedStyle(() => {
           const opacity = interpolate(scale.value, [0, 1], [1, 0]);
           return { opacity };
         });
+
         const animatedIconStyle = useAnimatedStyle(() => {
           const scaleValue = interpolate(scale.value, [0, 1], [1, 1.3]);
           const top = interpolate(scale.value, [0, 1], [0, 9]);
           return {
-            transform: [
-              {
-                scale: scaleValue,
-              },
-            ],
+            transform: [{ scale: scaleValue }],
             top,
           };
         });
+
         return (
           <Pressable key={route.key} onPress={onPress} style={styles.tabItem}>
             <Animated.View style={animatedIconStyle}>

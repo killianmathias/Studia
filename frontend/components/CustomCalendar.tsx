@@ -19,51 +19,11 @@ import "dayjs/locale/fr";
 import * as Haptics from "expo-haptics";
 import { ThemeContext } from "../context/ThemeContext";
 import { supabase } from "../lib/supabase";
+import { fetchUserId, fetchEvents } from "../functions/functions";
+import { CalendarEvent, SupabaseEvent } from "../types/types";
 
 const { width, height } = Dimensions.get("window");
 const BUTTONS = ["day", "week", "month"];
-
-type SupabaseEvent = {
-  id: string;
-  title: string;
-  date: string; // ISO string, début
-  duration: number; // durée en minutes
-  user_id: string;
-};
-
-type CalendarEvent = {
-  title: string;
-  start: Date;
-  end: Date;
-};
-
-async function fetchUserId() {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error) {
-    console.error("Erreur récupération utilisateur :", error.message);
-    return null;
-  }
-  return user.id;
-}
-
-async function fetchEvents(): Promise<SupabaseEvent[]> {
-  const userId = await fetchUserId();
-  if (!userId) return [];
-
-  const { data: events, error } = await supabase
-    .from("Event")
-    .select("*")
-    .eq("user_id", userId);
-
-  if (error) {
-    Alert.alert("Erreur", error.message);
-    return [];
-  }
-  return events || [];
-}
 
 const CustomCalendar = () => {
   const { theme } = useContext(ThemeContext);

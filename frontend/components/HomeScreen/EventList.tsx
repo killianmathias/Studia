@@ -3,30 +3,13 @@ import React, { useState, useEffect, useContext } from "react";
 import { supabase } from "../../lib/supabase";
 import { ThemeContext } from "../../context/ThemeContext";
 import ThemedText from "../Themed/ThemedText";
-
+import { fetchEvents } from "../../functions/functions";
 const { width, height } = Dimensions.get("window");
-type Event = {
-  id: string;
-  title: string;
-  date: string; // format ISO "2026-06-25T17:05:00",
-  type: string;
-};
+import { Section } from "../../types/types";
+import { SupabaseEvent } from "../../types/types";
+import CustomButton from "../CustomButton";
+import { useNavigation } from "@react-navigation/native";
 
-type Section = {
-  title: string; // format lisible "25 juin 2026"
-  data: Event[];
-};
-
-async function fetchEvents(): Promise<Event[]> {
-  let { data, error } = await supabase.from("Event").select("*");
-  if (error) {
-    console.error(error);
-    return [];
-  }
-  return data || [];
-}
-
-// Fonction pour convertir une date ISO en format lisible "25 juin 2026"
 const formatDate = (isoDate: string) => {
   const date = new Date(isoDate);
   return date.toLocaleDateString("fr-FR", {
@@ -36,12 +19,11 @@ const formatDate = (isoDate: string) => {
   });
 };
 
-// Fonction pour grouper par jour et trier par heure
-const groupEventsByDay = (events: Event[]): Section[] => {
-  const grouped: Record<string, Event[]> = {};
+const groupEventsByDay = (events: SupabaseEvent[]): Section[] => {
+  const grouped: Record<string, SupabaseEvent[]> = {};
 
   events.forEach((event) => {
-    const day = event.date.split("T")[0]; // "YYYY-MM-DD"
+    const day = event.date.split("T")[0];
     if (!grouped[day]) grouped[day] = [];
     grouped[day].push(event);
   });
@@ -61,8 +43,9 @@ const groupEventsByDay = (events: Event[]): Section[] => {
 };
 
 const EventList = () => {
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<SupabaseEvent[]>([]);
   const { theme } = useContext(ThemeContext);
+  const navigation = useNavigation();
 
   useEffect(() => {
     const loadEvents = async () => {
@@ -99,15 +82,30 @@ const EventList = () => {
     <View style={styles.container}>
       <View style={styles.titleContainer}>
         <ThemedText type="title" style={styles.title}>
-          Vos évenements à venir
+          Vos événements à venir
         </ThemedText>
       </View>
-      <SectionList
-        sections={sections}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        renderSectionHeader={renderSectionHeader}
-      />
+      {events.length == 0 ? (
+        <View style={styles.noEventContainer}>
+          <ThemedText
+            style={[styles.noEventText, { color: theme.textsecondary }]}
+            type="subtitle"
+          >
+            Aucun événement à venir
+          </ThemedText>
+          <CustomButton
+            onPress={() => navigation.navigate("add")}
+            title={"Ajouter un examen"}
+          />
+        </View>
+      ) : (
+        <SectionList
+          sections={sections}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          renderSectionHeader={renderSectionHeader}
+        />
+      )}
     </View>
   );
 };
@@ -159,4 +157,13 @@ const styles = StyleSheet.create({
     borderEndEndRadius: 15,
     borderTopEndRadius: 15,
   },
+  noEventContainer: {
+    position: "absolute",
+    height,
+    width,
+    marginTop: -0.151 * height,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  noEventText: {},
 });

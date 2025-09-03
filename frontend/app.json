@@ -8,7 +8,10 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "scheme": "com.studia",
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -31,8 +34,12 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "@react-native-google-signin/google-signin",
       "expo-apple-authentication"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "6cddeeb6-6359-41a5-94f5-8c870153679b"
+      }
+    }
   }
 }

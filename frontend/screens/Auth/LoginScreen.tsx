@@ -15,6 +15,7 @@ import { useNavigation } from "@react-navigation/native";
 import CustomButton from "../../components/CustomButton";
 import { useContext } from "react";
 import { ThemeContext } from "../../context/ThemeContext";
+import { SignInWithApple } from "./SignInWithApple";
 const { width, height } = Dimensions.get("window");
 
 const LoginScreen = () => {
@@ -80,6 +81,13 @@ const LoginScreen = () => {
           disabled={loading}
         />
       </View>
+
+      <View style={styles.lineContainer}>
+        <View style={styles.line} />
+        <Text style={styles.text}>ou alors connectez-vous via</Text>
+        <View style={styles.line} />
+      </View>
+      <SignInWithApple />
       <View style={[styles.verticallySpaced, styles.mt20]}>
         <Text style={styles.registerText}>
           Vous n'avez pas encore de compte ?
@@ -119,5 +127,21 @@ const styles = StyleSheet.create({
   },
   registerText: {
     fontSize: 18,
+  },
+  lineContainer: {
+    flexDirection: "row", // place les éléments en ligne
+    alignItems: "center", // aligne verticalement
+    marginVertical: 20,
+    width: "70%",
+  },
+  line: {
+    flex: 1, // prend tout l’espace dispo
+    height: 1,
+    backgroundColor: "#000",
+  },
+  text: {
+    marginHorizontal: 10, // espace entre le texte et les lignes
+    fontSize: 14,
+    color: "#333",
   },
 });

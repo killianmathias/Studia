@@ -25,6 +25,7 @@ import AddExamScreen from "./screens/AddExamScreen";
 import SettingsScreen from "./screens/SettingsScreen";
 import { ThemeContext, ThemeProvider } from "./context/ThemeContext";
 import { useContext } from "react";
+import ProfileScreen from "./screens/ProfileScreen";
 
 // --- Définition des types de navigation ---
 export type RootStackParamList = {
@@ -64,7 +65,7 @@ function MainTabs() {
       />
       <Tab.Screen
         name="profile"
-        component={SettingsScreen}
+        component={ProfileScreen}
         options={{ tabBarLabel: "Profil" }}
       />
       <Tab.Screen

@@ -15,7 +15,7 @@ async function logOut() {
   }
 }
 // --- Screens ---
-export default function SettingsScreen() {
+export default function ProfileScreen() {
   const { theme, setMode, mode } = useContext(ThemeContext);
   return (
     <ThemedSafeAreaView

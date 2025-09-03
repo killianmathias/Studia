@@ -3,6 +3,7 @@ import {
   StyleSheet,
   View,
   Image,
+  Text,
   TouchableOpacity,
 } from "react-native";
 import React, { useEffect, useState, useContext } from "react";
@@ -10,6 +11,14 @@ import ThemedText from "../Themed/ThemedText";
 import ThemedSafeAreaView from "../Themed/ThemedSafeAreaView";
 import { supabase } from "../../lib/supabase";
 import { ThemeContext } from "../../context/ThemeContext";
+import { useNavigation } from "@react-navigation/native";
+import XPProgressCircle from "./XPProgresseCircle";
+import {
+  getLevelFromXp,
+  getUserXp,
+  getXpForLevel,
+} from "../../functions/functions";
+import { darkTheme, lightTheme } from "../../themes/themes";
 
 const { width, height } = Dimensions.get("window");
 
@@ -63,12 +72,19 @@ const Header = () => {
     profile_picture: "",
     name: "",
   });
-  const { theme } = useContext(ThemeContext);
+  const [userXp, setUserXp] = useState(0); // 👈 ajouter un state pour l'XP
+  const { theme, mode } = useContext(ThemeContext);
+  const navigation = useNavigation();
 
+  // Charger les données utilisateur
   useEffect(() => {
     const loadUser = async () => {
       const userData = await fetchUser();
       if (userData) setUser(userData);
+
+      const xp = await getUserXp();
+      const xpValue = xp[0]?.xp || 0;
+      setUserXp(xpValue || 0);
     };
     loadUser();
   }, []);
@@ -81,16 +97,19 @@ const Header = () => {
         Bienvenue {user?.surname}
       </ThemedText>
       <View style={styles.profilePicture}>
-        <TouchableOpacity onPress={() => console.log(user.profile_picture)}>
-          <Image
-            source={
-              user.profile_picture
-                ? { uri: encodeURI(user.profile_picture) }
-                : require("../../assets/default-profile.png")
-            }
-            style={styles.profilePictureImage}
+        <TouchableOpacity onPress={() => navigation.navigate("profile")}>
+          <XPProgressCircle
+            imageUri={user.profile_picture}
+            size={50}
+            strokeWidth={5}
+            progress={userXp / getLevelFromXp(userXp).nextLevelXp}
           />
         </TouchableOpacity>
+        <View
+          style={[styles.levelContainer, { backgroundColor: theme.primary }]}
+        >
+          <Text style={[styles.level]}>{getLevelFromXp(userXp).level}</Text>
+        </View>
       </View>
     </ThemedSafeAreaView>
   );
@@ -120,10 +139,25 @@ const styles = StyleSheet.create({
     height: height * 0.06,
     marginRight: width * 0.025,
     borderRadius: 100,
+    alignItems: "center",
   },
   profilePictureImage: {
     width: "100%",
     height: "100%",
     borderRadius: 100,
+  },
+  levelContainer: {
+    position: "absolute",
+    top: height * 0.045,
+    width: 0.02 * height,
+    height: 0.02 * height,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 100,
+  },
+  level: {
+    fontWeight: 700,
+    fontSize: 15,
+    color: "#FFFFFF",
   },
 });

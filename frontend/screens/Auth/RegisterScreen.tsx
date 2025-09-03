@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
-import { lightTheme, darkTheme } from "../../themes/themes";
 import Input from "../../components/Input";
 import { useNavigation } from "@react-navigation/native";
 import CustomButton from "../../components/CustomButton";
@@ -19,7 +18,6 @@ import LevelPicker from "../../components/LevelPicker";
 import { Checkbox } from "expo-checkbox";
 import { useContext } from "react";
 import { ThemeContext } from "../../context/ThemeContext";
-import LoginWithGoogle from "./LoginWithGoogle";
 import { SignInWithApple } from "./SignInWithApple";
 
 const { width, height } = Dimensions.get("window");

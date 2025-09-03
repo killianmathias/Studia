@@ -15,7 +15,10 @@ export function SignInWithApple() {
       });
 
       if (!credential.identityToken) throw new Error("No identityToken.");
+      const name = credential.fullName?.familyName;
+      const surname = credential.fullName?.givenName;
 
+      console.log(credential);
       // 1. Authentification via Supabase avec le token Apple
       const {
         data: { user: authUser },
@@ -32,7 +35,7 @@ export function SignInWithApple() {
         );
         return;
       }
-
+      console.log(authUser);
       const provider = "apple";
 
       // 2. Vérifier si ce provider est déjà lié
@@ -60,12 +63,12 @@ export function SignInWithApple() {
         // Utilisateur déjà existant → on réutilise son id
         userId = existingUser.id;
       } else {
-        // Nouvel utilisateur → insertion dans users
         const { data: newUser, error: insertError } = await supabase
           .from("Users")
           .insert({
             email: authUser.email,
-            name: authUser.user_metadata?.full_name ?? null,
+            name: name ?? null,
+            surname: surname ?? null,
           })
           .select()
           .single();
@@ -74,7 +77,6 @@ export function SignInWithApple() {
         userId = newUser.id;
       }
 
-      // 4. Lier authUser.id (Supabase Auth) à users.id
       const { error: linkError } = await supabase
         .from("User_providers")
         .insert({
