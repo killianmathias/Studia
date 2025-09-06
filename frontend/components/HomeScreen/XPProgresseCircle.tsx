@@ -1,30 +1,51 @@
 import React, { useContext } from "react";
-import { View, Image, StyleSheet, Text } from "react-native";
+import { View, Image, StyleSheet, Text, Dimensions } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import { ThemeContext } from "../../context/ThemeContext";
 import ThemedText from "../Themed/ThemedText";
 import { getLevelFromXp, getUserXp } from "../../functions/functions";
+import { useState, useEffect } from "react";
+
+const { height, width } = Dimensions.get("window");
 
 interface XPProgressCircleProps {
   size: number;
   strokeWidth: number;
-  progress: number; // 0 à 1
   imageUri: string;
+  uid: string;
 }
 
 export default function XPProgressCircle({
   size,
   strokeWidth,
-  progress,
   imageUri,
+  uid,
 }: XPProgressCircleProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference * (1 - progress);
+
   const { theme } = useContext(ThemeContext);
+  const [userXp, setUserXp] = useState(0);
+  useEffect(() => {
+    const loadUser = async () => {
+      const xp = await getUserXp(uid);
+      const xpValue = xp[0]?.xp || 0;
+      setUserXp(xpValue || 0);
+    };
+    loadUser();
+  }, []);
+  const strokeDashoffset =
+    circumference * (1 - userXp / getLevelFromXp(userXp).nextLevelXp);
 
   return (
-    <View style={{ width: size, height: size }}>
+    <View
+      style={{
+        width: size,
+        height: size,
+        alignItems: "center",
+        position: "relative",
+      }}
+    >
       <Svg width={size} height={size}>
         {/* Cercle de fond */}
         <Circle
@@ -66,6 +87,36 @@ export default function XPProgressCircle({
           left: strokeWidth,
         }}
       />
+      <View
+        style={[
+          styles.levelContainer,
+          {
+            backgroundColor: theme.primary,
+            width: height * 0.02 + (size / height) * 50,
+            height: height * 0.02 + (size / height) * 50,
+            bottom: -size / 8,
+            left: "50%",
+            transform: [
+              { translateX: -(height * 0.02 + (size / height) * 50) / 2 }, // centrage horizontal
+            ],
+          },
+        ]}
+      >
+        <Text style={[styles.level]}>{getLevelFromXp(userXp).level}</Text>
+      </View>
     </View>
   );
 }
+const styles = StyleSheet.create({
+  levelContainer: {
+    position: "absolute",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 100,
+  },
+  level: {
+    fontWeight: 700,
+    fontSize: 15,
+    color: "#FFFFFF",
+  },
+});

@@ -14,9 +14,9 @@ import { ThemeContext } from "../context/ThemeContext";
 const icons: Record<string, keyof typeof Feather.glyphMap> = {
   home: "home",
   profile: "user",
-  settings: "settings",
   calendar: "calendar",
   add: "plus",
+  friends: "users",
 };
 
 const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {

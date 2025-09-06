@@ -44,8 +44,7 @@ export function getLevelFromXp(xp: number) {
 
   return { level, currentXp, nextLevelXp };
 }
-export async function getUserXp() {
-  const userId = await fetchUserId();
+export async function getUserXp(userId) {
   if (!userId) return 0;
 
   const { data: users_id, error: firstError } = await supabase
@@ -68,3 +67,33 @@ export async function getUserXp() {
   }
   return xp || 0;
 }
+
+export async function fetchUserInfos(userId) {
+  if (!userId) return [];
+
+  const { data: users_id, error: firstError } = await supabase
+    .from("User_providers")
+    .select("user_id")
+    .eq("provider_user_id", userId)
+    .single();
+
+  if (firstError) {
+    Alert.alert("Erreur", firstError.message);
+    return [];
+  }
+  const { data: userInfos, error: secondError } = await supabase
+    .from("Users")
+    .select(
+      "email, name, surname, date_of_birth, profile_picture, level, username"
+    )
+    .eq("id", users_id.user_id);
+  if (secondError) {
+    Alert.alert("Erreur", secondError.message);
+    return [];
+  }
+  return userInfos[0] || [];
+}
+
+export const formatTwoDigits = (num: number) => {
+  return num.toString().padStart(2, "0");
+};

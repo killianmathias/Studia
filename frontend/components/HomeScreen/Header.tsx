@@ -5,6 +5,7 @@ import {
   Image,
   Text,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import React, { useEffect, useState, useContext } from "react";
 import ThemedText from "../Themed/ThemedText";
@@ -14,6 +15,8 @@ import { ThemeContext } from "../../context/ThemeContext";
 import { useNavigation } from "@react-navigation/native";
 import XPProgressCircle from "./XPProgresseCircle";
 import {
+  fetchUserId,
+  fetchUserInfos,
   getLevelFromXp,
   getUserXp,
   getXpForLevel,
@@ -72,20 +75,25 @@ const Header = () => {
     profile_picture: "",
     name: "",
   });
-  const [userXp, setUserXp] = useState(0); // 👈 ajouter un state pour l'XP
+  const [userId, setUserId] = useState(null);
   const { theme, mode } = useContext(ThemeContext);
   const navigation = useNavigation();
 
   // Charger les données utilisateur
   useEffect(() => {
-    const loadUser = async () => {
-      const userData = await fetchUser();
-      if (userData) setUser(userData);
-
-      const xp = await getUserXp();
-      const xpValue = xp[0]?.xp || 0;
-      setUserXp(xpValue || 0);
+    const loadUserId = async () => {
+      const uid = await fetchUserId();
+      setUserId(uid);
     };
+    const loadUser = async () => {
+      const tempUser = await fetchUserInfos(userId);
+      setUser({
+        surname: tempUser.surname,
+        name: tempUser.name,
+        profile_picture: tempUser.profilePicture,
+      });
+    };
+    loadUserId();
     loadUser();
   }, []);
 
@@ -98,18 +106,17 @@ const Header = () => {
       </ThemedText>
       <View style={styles.profilePicture}>
         <TouchableOpacity onPress={() => navigation.navigate("profile")}>
-          <XPProgressCircle
-            imageUri={user.profile_picture}
-            size={50}
-            strokeWidth={5}
-            progress={userXp / getLevelFromXp(userXp).nextLevelXp}
-          />
+          {!userId ? (
+            <ActivityIndicator />
+          ) : (
+            <XPProgressCircle
+              imageUri={user.profile_picture}
+              size={50}
+              strokeWidth={5}
+              uid={userId}
+            />
+          )}
         </TouchableOpacity>
-        <View
-          style={[styles.levelContainer, { backgroundColor: theme.primary }]}
-        >
-          <Text style={[styles.level]}>{getLevelFromXp(userXp).level}</Text>
-        </View>
       </View>
     </ThemedSafeAreaView>
   );

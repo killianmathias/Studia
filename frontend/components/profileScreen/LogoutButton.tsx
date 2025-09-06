@@ -35,7 +35,7 @@ function confirm() {
 const LogoutButton = () => {
   return (
     <TouchableOpacity style={styles.logoutButton} onPress={confirm}>
-      <Text style={{ color: "white" }}>Se Déconnecter</Text>
+      <Text style={{ color: "white", fontWeight: "700" }}>Se Déconnecter</Text>
     </TouchableOpacity>
   );
 };
@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
   logoutButton: {
     backgroundColor: "red",
     padding: 10,
-    borderRadius: 5,
+    borderRadius: 10,
     alignItems: "center",
   },
 });

@@ -18,7 +18,7 @@ const LevelPicker = ({ value, onChange }) => {
   const options = ["Collège", "Lycée", "Université", "Autre"];
   const textColor = theme.textprimary;
   const [visible, setVisible] = useState(false);
-  const [level, setLevel] = useState(options[0]);
+  const [level, setLevel] = useState(value || options[0]);
 
   const confirmLevel = () => {
     const selectedLevel = level;

@@ -26,6 +26,8 @@ import SettingsScreen from "./screens/SettingsScreen";
 import { ThemeContext, ThemeProvider } from "./context/ThemeContext";
 import { useContext } from "react";
 import ProfileScreen from "./screens/ProfileScreen";
+import { fetchUserId } from "./functions/functions";
+import FriendsScreen from "./screens/FriendsScreen";
 
 // --- Définition des types de navigation ---
 export type RootStackParamList = {
@@ -43,6 +45,15 @@ const Tab = createBottomTabNavigator<RootTabParamList>();
 
 // --- Tabs visibles après connexion ---
 function MainTabs() {
+  const [userId, setUserId] = useState(null);
+  useEffect(() => {
+    async function fetchUid() {
+      const uid = await fetchUserId();
+      setUserId(uid);
+    }
+    fetchUid();
+  });
+
   return (
     <Tab.Navigator
       tabBar={(props) => <TabBar {...props} />}
@@ -64,14 +75,15 @@ function MainTabs() {
         options={{ tabBarLabel: "Ajouter" }}
       />
       <Tab.Screen
+        name="friends"
+        component={FriendsScreen}
+        options={{ tabBarLabel: "Amis" }}
+      />
+      <Tab.Screen
         name="profile"
         component={ProfileScreen}
         options={{ tabBarLabel: "Profil" }}
-      />
-      <Tab.Screen
-        name="settings"
-        component={SettingsScreen}
-        options={{ tabBarLabel: "Réglages" }}
+        initialParams={{ userId: userId }}
       />
     </Tab.Navigator>
   );
