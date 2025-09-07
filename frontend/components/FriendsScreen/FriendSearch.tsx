@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   View,
   TextInput,
@@ -9,10 +9,16 @@ import {
   Alert,
   Touchable,
   TouchableOpacity,
+  Pressable,
+  Dimensions,
 } from "react-native";
 import { supabase } from "../../lib/supabase";
 import { fetchUserId } from "../../functions/functions";
 import { useNavigation } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
+import { ThemeContext } from "../../context/ThemeContext";
+
+const { width, height } = Dimensions.get("window");
 
 export default function FriendSearch() {
   const [query, setQuery] = useState("");
@@ -20,6 +26,7 @@ export default function FriendSearch() {
   const [loading, setLoading] = useState(false);
   const [visitorId, setVisitorId] = useState("");
   const [userId, setUserId] = useState("");
+  const { theme } = useContext(ThemeContext);
 
   useEffect(() => {
     async function fetchVisitorId() {
@@ -201,38 +208,21 @@ export default function FriendSearch() {
     }
     return currentUserData.provider_user_id;
   };
-
-  //   const navigation = useNavigation();
-  //   const handlePressUser = async (id) => {
-  //     const authId = await getAuthId(id);
-  //     navigation.navigate("profile", { userId: authId });
-  //   };
   return (
     <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="Chercher un username..."
-        value={query}
-        onChangeText={setQuery}
-        autoCapitalize="none"
-      />
-      <Button title="Rechercher" onPress={searchUser} disabled={loading} />
+      <View style={[styles.searchBar, { backgroundColor: theme.surface }]}>
+        <TextInput
+          style={styles.input}
+          placeholder="Chercher un username..."
+          value={query}
+          onChangeText={setQuery}
+          autoCapitalize="none"
+        />
 
-      {/* <FlatList
-        data={results}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.userItem}
-            onPress={() => handlePressUser(item.id)}
-          >
-            <Text>
-              {item.username} ({item.name} {item.surname})
-            </Text>
-            <Button title="Ajouter en ami" onPress={() => addFriend(item.id)} />
-          </TouchableOpacity>
-        )}
-      /> */}
+        <TouchableOpacity onPress={searchUser} disabled={loading}>
+          <Ionicons name="search" size={height * 0.04} color={theme.primary} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -241,13 +231,6 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
   },
-  input: {
-    borderColor: "#ccc",
-    borderWidth: 1,
-    padding: 8,
-    marginBottom: 8,
-    borderRadius: 8,
-  },
   userItem: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -255,5 +238,21 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderBottomWidth: 1,
     borderColor: "#eee",
+  },
+  searchBar: {
+    flexDirection: "row",
+    width: width * 0.9,
+    height: height * 0.08,
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: width * 0.05,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    borderRadius: 30,
+  },
+  input: {
+    maxWidth: "85%",
   },
 });

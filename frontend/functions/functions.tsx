@@ -110,3 +110,19 @@ export async function getSignedUrlFromPath(path) {
   if (error) throw error;
   return data.signedUrl;
 }
+
+export async function fetchUserIdFromUsers(userId) {
+  if (!userId) return;
+
+  const { data, error } = await supabase
+    .from("User_providers")
+    .select("user_id")
+    .eq("provider_user_id", userId)
+    .single();
+  if (error) {
+    Alert.alert("Une erreur est survenue");
+    return "";
+  }
+  console.log("Données utilisateur:", data);
+  return data.user_id;
+}

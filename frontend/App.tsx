@@ -80,6 +80,7 @@ function MainTabs() {
         name="friends"
         component={FriendsScreen}
         options={{ tabBarLabel: "Amis" }}
+        initialParams={{ userId: userId }}
       />
       <Tab.Screen
         name="profile"
