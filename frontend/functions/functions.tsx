@@ -89,11 +89,24 @@ export async function fetchUserInfos(userId) {
     .eq("id", users_id.user_id);
   if (secondError) {
     Alert.alert("Erreur", secondError.message);
+    console.log("Erreur");
     return [];
   }
+  console.log(userInfos[0]);
   return userInfos[0] || [];
 }
 
 export const formatTwoDigits = (num: number) => {
   return num.toString().padStart(2, "0");
 };
+
+// Récupérer un signed URL à partir du path stocké en base
+export async function getSignedUrlFromPath(path) {
+  // expires en secondes (ex: 3600 = 1 heure)
+  const { data, error } = await supabase.storage
+    .from("avatars")
+    .createSignedUrl(path, 3600);
+
+  if (error) throw error;
+  return data.signedUrl;
+}

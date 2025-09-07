@@ -1,0 +1,94 @@
+// RegisterStep1Screen.js
+import React, { useContext, useState } from "react";
+import { View, Text, SafeAreaView, StyleSheet, Dimensions } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import Input from "../../../components/Input";
+import CustomButton from "../../../components/CustomButton";
+import { SignInWithApple } from "./../SignInWithApple";
+import { ThemeContext } from "../../../context/ThemeContext";
+// import LoginWithGoogle from "./LoginWithGoogle";
+
+const { width, height } = Dimensions.get("window");
+
+const RegisterStep1Screen = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const navigation = useNavigation();
+  const { theme } = useContext(ThemeContext);
+
+  const goToStep2 = () => {
+    if (email != "" && password != "") {
+      navigation.navigate("RegisterStep2", { email, password });
+    }
+  };
+
+  return (
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.background }]}
+    >
+      <Text style={styles.title}>Créer un compte</Text>
+
+      {/* Connexion par email */}
+      <View style={styles.inputContainer}>
+        <Input
+          icon="mail"
+          onChangeText={setEmail}
+          value={email}
+          placeholder="email@address.com"
+          type="email"
+          autoCapitalize={"none"}
+        />
+      </View>
+      <View style={styles.inputContainer}>
+        <Input
+          icon="lock-closed"
+          onChangeText={setPassword}
+          value={password}
+          secureTextEntry
+          type="password"
+          placeholder="Mot de passe"
+        />
+      </View>
+      <View style={styles.inputContainer}>
+        <CustomButton title="Continuer" onPress={goToStep2} />
+      </View>
+      <View style={styles.lineContainer}>
+        <View style={styles.line} />
+        <Text style={styles.text}>ou inscrivez-vous via</Text>
+        <View style={styles.line} />
+      </View>
+
+      {/* Providers */}
+      {/* <LoginWithGoogle /> */}
+      <SignInWithApple
+        onSuccess={(authUser) => {
+          // on passe juste le provider à l’étape 2
+          navigation.navigate("RegisterStep2", { provider: "apple", authUser });
+        }}
+      />
+    </SafeAreaView>
+  );
+};
+
+export default RegisterStep1Screen;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  title: { fontSize: width / 12, fontWeight: "bold", marginBottom: 20 },
+  lineContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 20,
+    width: "70%",
+  },
+  line: { flex: 1, height: 1, backgroundColor: "#000" },
+  text: { marginHorizontal: 10, fontSize: 14, color: "#333" },
+  inputContainer: {
+    marginTop: height * 0.01,
+  },
+});

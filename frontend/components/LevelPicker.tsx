@@ -45,7 +45,7 @@ const LevelPicker = ({ value, onChange }) => {
         />
         <Text
           style={{
-            color: theme.primary,
+            color: theme.textprimary,
           }}
         >
           {level}

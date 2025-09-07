@@ -28,6 +28,8 @@ import { useContext } from "react";
 import ProfileScreen from "./screens/ProfileScreen";
 import { fetchUserId } from "./functions/functions";
 import FriendsScreen from "./screens/FriendsScreen";
+import RegisterStep1Screen from "./screens/Auth/Register/RegisterStep1Screen";
+import RegisterStep2Screen from "./screens/Auth/Register/RegisterStep2Screen";
 
 // --- Définition des types de navigation ---
 export type RootStackParamList = {
@@ -128,8 +130,13 @@ export default function App() {
               options={{ animation: "none" }}
             />
             <Stack.Screen
-              name="Register"
-              component={RegisterScreen}
+              name="RegisterStep1"
+              component={RegisterStep1Screen}
+              options={{ animation: "none" }}
+            />
+            <Stack.Screen
+              name="RegisterStep2"
+              component={RegisterStep2Screen}
               options={{ animation: "none" }}
             />
           </Stack.Navigator>

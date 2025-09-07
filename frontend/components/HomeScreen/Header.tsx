@@ -14,14 +14,7 @@ import { supabase } from "../../lib/supabase";
 import { ThemeContext } from "../../context/ThemeContext";
 import { useNavigation } from "@react-navigation/native";
 import XPProgressCircle from "./XPProgresseCircle";
-import {
-  fetchUserId,
-  fetchUserInfos,
-  getLevelFromXp,
-  getUserXp,
-  getXpForLevel,
-} from "../../functions/functions";
-import { darkTheme, lightTheme } from "../../themes/themes";
+import { fetchUserId, fetchUserInfos } from "../../functions/functions";
 
 const { width, height } = Dimensions.get("window");
 
@@ -38,36 +31,36 @@ async function fetchAuthUser() {
   return user;
 }
 
-// 2️⃣ Mapper vers users.id via user_providers
-async function fetchUser() {
-  const authUser = await fetchAuthUser();
-  if (!authUser) return null;
+// // 2️⃣ Mapper vers users.id via user_providers
+// async function fetchUser() {
+//   const authUser = await fetchAuthUser();
+//   if (!authUser) return null;
 
-  const { data: providerData, error: providerError } = await supabase
-    .from("User_providers")
-    .select("user_id")
-    .eq("provider_user_id", authUser.id)
-    .maybeSingle();
+//   const { data: providerData, error: providerError } = await supabase
+//     .from("User_providers")
+//     .select("user_id")
+//     .eq("provider_user_id", authUser.id)
+//     .maybeSingle();
 
-  if (providerError || !providerData) {
-    console.error("Erreur mapping user_providers :", providerError?.message);
-    return null;
-  }
+//   if (providerError || !providerData) {
+//     console.error("Erreur mapping user_providers :", providerError?.message);
+//     return null;
+//   }
 
-  const userId = providerData.user_id;
+//   const userId = providerData.user_id;
 
-  const { data: user, error: userError } = await supabase
-    .from("Users")
-    .select("*")
-    .eq("id", userId)
-    .single();
+//   const { data: user, error: userError } = await supabase
+//     .from("Users")
+//     .select("*")
+//     .eq("id", userId)
+//     .maybeSingle();
 
-  if (userError) {
-    console.error("Erreur récupération user :", userError.message);
-    return null;
-  }
-  return user;
-}
+//   if (userError) {
+//     console.error("Erreur récupération user :", userError.message);
+//     return null;
+//   }
+//   return user;
+// }
 
 const Header = () => {
   const [user, setUser] = useState({
@@ -85,17 +78,21 @@ const Header = () => {
       const uid = await fetchUserId();
       setUserId(uid);
     };
+
+    loadUserId();
+  }, []);
+  useEffect(() => {
     const loadUser = async () => {
       const tempUser = await fetchUserInfos(userId);
+
       setUser({
         surname: tempUser.surname,
         name: tempUser.name,
-        profile_picture: tempUser.profilePicture,
+        profile_picture: tempUser.profile_picture,
       });
     };
-    loadUserId();
     loadUser();
-  }, []);
+  }, [userId]);
 
   return (
     <ThemedSafeAreaView

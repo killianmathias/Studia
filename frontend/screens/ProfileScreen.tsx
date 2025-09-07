@@ -14,21 +14,28 @@ import ThemedText from "../components/Themed/ThemedText";
 import { supabase } from "../lib/supabase";
 import { useContext, useEffect, useState } from "react";
 import { ThemeContext } from "../context/ThemeContext";
-import EditButton from "../components/profileScreen/EditButton";
-import ThemeButton from "../components/profileScreen/ThemeButton";
-import ThemeSelector from "../components/profileScreen/ThemeSelector";
-import LogoutButton from "../components/profileScreen/LogoutButton";
+import EditButton from "../components/ProfileScreen/EditButton";
+import ThemeButton from "../components/ProfileScreen/ThemeButton";
+import ThemeSelector from "../components/ProfileScreen/ThemeSelector";
+import LogoutButton from "../components/ProfileScreen/LogoutButton";
 import Input from "../components/Input";
-import { fetchUserId, fetchUserInfos } from "../functions/functions";
+import {
+  fetchUserId,
+  fetchUserInfos,
+  fetchUserInfosWithAuthId,
+  fetchUserInfosWithUserId,
+} from "../functions/functions";
 import CustomDatePicker from "../components/CustomDatePicker";
 import LevelPicker from "../components/LevelPicker";
 import XPProgressCircle from "../components/HomeScreen/XPProgresseCircle";
-import Stats from "../components/profileScreen/Stats";
+import Stats from "../components/ProfileScreen/Stats";
 import { useRoute } from "@react-navigation/native";
 import { SignInWithApple } from "./Auth/SignInWithApple";
 import { Modal } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 const { width, height } = Dimensions.get("window");
+import * as ImagePicker from "expo-image-picker";
+import LoadImageButton from "../components/ProfileScreen/LoadImageButton";
 
 async function logOut() {
   const {
@@ -66,6 +73,7 @@ export default function ProfileScreen() {
   useEffect(() => {
     setLoading(true);
     async function fetchUser() {
+      console.log(userId);
       const data = await fetchUserInfos(userId);
       if (data) {
         setName(data.name);
@@ -129,6 +137,7 @@ export default function ProfileScreen() {
       );
     }
   }
+
   async function saveChanges() {
     const { data: providerData, error: idError } = await supabase
       .from("User_providers")
@@ -204,11 +213,19 @@ export default function ProfileScreen() {
             strokeWidth={5}
             uid={userId}
           />
-          <View style={styles.usernameContainer}>
-            <ThemedText style={styles.username} type="subtitle">
-              {/* {surname} {name} */} @{username}
-            </ThemedText>
-          </View>
+          {editing ? (
+            <LoadImageButton
+              setLoading={setLoading}
+              setProfilePicture={setProfilePicture}
+              userId={userId}
+            />
+          ) : (
+            <View style={styles.usernameContainer}>
+              <ThemedText style={styles.username} type="subtitle">
+                {/* {surname} {name} */} @{username}
+              </ThemedText>
+            </View>
+          )}
 
           {editing ? (
             <View style={styles.editingContainer}>
@@ -257,11 +274,15 @@ export default function ProfileScreen() {
             </View>
           ) : (
             <>
-              <View style={styles.themeButtonContainer}>
-                <ThemeSelector />
-              </View>
+              {userId === visitorId ? (
+                <View style={styles.themeButtonContainer}>
+                  <ThemeSelector />
+                </View>
+              ) : (
+                <></>
+              )}
               <Stats userId={userId} />
-              <LogoutButton />
+              {userId === visitorId ? <LogoutButton /> : <></>}
             </>
           )}
           <Modal

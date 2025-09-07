@@ -3,7 +3,11 @@ import { View, Image, StyleSheet, Text, Dimensions } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import { ThemeContext } from "../../context/ThemeContext";
 import ThemedText from "../Themed/ThemedText";
-import { getLevelFromXp, getUserXp } from "../../functions/functions";
+import {
+  getLevelFromXp,
+  getSignedUrlFromPath,
+  getUserXp,
+} from "../../functions/functions";
 import { useState, useEffect } from "react";
 
 const { height, width } = Dimensions.get("window");
@@ -26,6 +30,7 @@ export default function XPProgressCircle({
 
   const { theme } = useContext(ThemeContext);
   const [userXp, setUserXp] = useState(0);
+  const [signedUrl, setSignedUrl] = useState("");
   useEffect(() => {
     const loadUser = async () => {
       const xp = await getUserXp(uid);
@@ -34,9 +39,15 @@ export default function XPProgressCircle({
     };
     loadUser();
   }, []);
+
+  useEffect(() => {
+    async function setUrl() {
+      setSignedUrl(await getSignedUrlFromPath(imageUri));
+    }
+    setUrl();
+  }, [imageUri]);
   const strokeDashoffset =
     circumference * (1 - userXp / getLevelFromXp(userXp).nextLevelXp);
-
   return (
     <View
       style={{
@@ -75,7 +86,7 @@ export default function XPProgressCircle({
       <Image
         source={
           imageUri
-            ? { uri: encodeURI(imageUri) }
+            ? { uri: signedUrl }
             : require("../../assets/default-profile.png")
         }
         style={{

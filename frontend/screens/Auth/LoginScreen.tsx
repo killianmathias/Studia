@@ -95,7 +95,7 @@ const LoginScreen = () => {
         <Button
           title="Inscrivez-vous !"
           disabled={loading}
-          onPress={() => navigation.navigate("Register")}
+          onPress={() => navigation.navigate("RegisterStep1")}
         />
       </View>
     </SafeAreaView>
