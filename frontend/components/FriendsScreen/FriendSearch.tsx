@@ -37,7 +37,9 @@ export default function FriendSearch() {
   }, []);
 
   // Recherche d'utilisateur par username exact
-
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
   const checkFriendship = async (userId1, userId2) => {
     const { data, error } = await supabase
       .from("Friendships")
@@ -49,7 +51,6 @@ export default function FriendSearch() {
       .single();
 
     if (error && error.code !== "PGRST116") {
-      // PGRST116 = no rows found
       throw new Error(error.message);
     }
 
@@ -69,7 +70,6 @@ export default function FriendSearch() {
   };
 
   const handleFriendRequest = async (userId, targetUserId) => {
-    // Vérifier si une relation existe déjà
     const { data, error } = await supabase
       .from("Friendships")
       .select("id, requester, addressee, status")
@@ -80,7 +80,6 @@ export default function FriendSearch() {
       .single();
 
     if (error && error.code !== "PGRST116") {
-      // PGRST116 = no rows found
       Alert.alert("Erreur", error.message);
       return;
     }
@@ -128,60 +127,89 @@ export default function FriendSearch() {
       }
     }
   };
+
   const searchUser = async () => {
     if (!query) return;
     setLoading(true);
-    // Récupérer l'utilisateur connecté dans Users
-    const { data: currentUserData, error: currentUserError } = await supabase
-      .from("User_providers")
-      .select("user_id")
-      .eq("provider_user_id", visitorId)
-      .single();
+    try {
+      if (!visitorId) {
+        Alert.alert(
+          "Erreur",
+          "Identifiant visiteur introuvable. Réessayez plus tard."
+        );
+        return;
+      }
 
-    if (currentUserError) {
-      Alert.alert("Erreur", currentUserError.message);
-      setLoading(false);
-      return;
-    }
+      // Récupérer l'id courant (local var)
+      const { data: currentUserData, error: currentUserError } = await supabase
+        .from("User_providers")
+        .select("user_id")
+        .eq("provider_user_id", visitorId)
+        .single();
 
-    const currentUserId = currentUserData.user_id;
-    setUserId(currentUserId);
+      if (currentUserError) {
+        Alert.alert("Erreur", currentUserError.message);
+        return;
+      }
 
-    // Chercher l'utilisateur par username exact
-    const { data, error } = await supabase
-      .from("Users")
-      .select("id, username, name, surname")
-      .eq("username", query)
-      .neq("id", currentUserId); // exclure soi-même
+      const currentUserId = currentUserData.user_id;
+      setUserId(currentUserId); // on peut toujours mettre l'état pour l'UI
 
-    if (error) {
-      Alert.alert("Erreur", error.message);
-    } else {
+      // Chercher l'utilisateur par username
+      const { data, error } = await supabase
+        .from("Users")
+        .select("id, username, name, surname")
+        .eq("username", query)
+        .neq("id", currentUserId);
+
+      if (error) {
+        Alert.alert("Erreur", error.message);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        Alert.alert("Utilisateur introuvable");
+        return;
+      }
+
       setResults(data);
-    }
-    const userFriendships = await checkFriendship(currentUserId, data[0].id);
+      const targetId = data[0].id;
 
-    if (userFriendships.areFriends) {
-      Alert.alert("Vous êtes déjà amis !");
+      const userFriendships = await checkFriendship(currentUserId, targetId);
+
+      if (userFriendships.areFriends) {
+        Alert.alert("Info", "Vous êtes déjà amis !");
+        return;
+      } else if (userFriendships.requestPending) {
+        // handleFriendRequest utilise déjà des paramètres, on lui passe currentUserId
+        await handleFriendRequest(currentUserId, targetId);
+        return;
+      }
+
+      await addFriend(currentUserId, targetId);
+    } catch (err) {
+      Alert.alert("Erreur", err.message ?? String(err));
+    } finally {
       setLoading(false);
-      return;
-    } else if (userFriendships.requestPending) {
-      handleFriendRequest(currentUserId, data[0].id);
-      setLoading(false);
-      return;
     }
-
-    addFriend(data[0].id);
-
-    setLoading(false);
   };
 
-  // Ajouter un ami
-  const addFriend = async (targetUserId) => {
+  // Et modifie addFriend pour accepter requesterId
+  const addFriend = async (requesterId, targetUserId) => {
+    if (!requesterId) {
+      Alert.alert("Erreur", "Identifiant utilisateur manquant.");
+      return;
+    }
+    if (!targetUserId) {
+      Alert.alert("Erreur", "Identifiant de la cible manquant.");
+      return;
+    }
+
     const { data, error } = await supabase.from("Friendships").insert([
       {
-        requester: userId,
+        requester: requesterId,
         addressee: targetUserId,
+        status: "pending", // mieux garder la cohérence
       },
     ]);
 
@@ -192,22 +220,22 @@ export default function FriendSearch() {
     }
   };
 
-  const getAuthId = async (user_id) => {
-    if (!user_id) return "";
+  // const getAuthId = async (user_id) => {
+  //   if (!user_id) return "";
 
-    const { data: currentUserData, error: currentUserError } = await supabase
-      .from("User_providers")
-      .select("provider_user_id")
-      .eq("user_id", user_id)
-      .single();
+  //   const { data: currentUserData, error: currentUserError } = await supabase
+  //     .from("User_providers")
+  //     .select("provider_user_id")
+  //     .eq("user_id", user_id)
+  //     .single();
 
-    if (currentUserError) {
-      Alert.alert("Erreur", currentUserError.message);
-      setLoading(false);
-      return;
-    }
-    return currentUserData.provider_user_id;
-  };
+  //   if (currentUserError) {
+  //     Alert.alert("Erreur", currentUserError.message);
+  //     setLoading(false);
+  //     return;
+  //   }
+  //   return currentUserData.provider_user_id;
+  // };
   return (
     <View style={styles.container}>
       <View style={[styles.searchBar, { backgroundColor: theme.surface }]}>

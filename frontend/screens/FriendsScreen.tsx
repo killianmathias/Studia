@@ -15,13 +15,13 @@ const FriendsScreen = () => {
   const { userId } = route.params;
   return (
     <ThemedSafeAreaView style={styles.friendsScreenContainer}>
-      <ThemedText style={styles.friendsScreenTitle} type="title">
+      {/* <ThemedText style={styles.friendsScreenTitle} type="title">
         Amis
-      </ThemedText>
+      </ThemedText> */}
       <FriendSearch />
       <TabSelector setTab={setTab} tab={tab} />
       {tab === "friends" ? (
-        <ListOfFriends userId={userId} />
+        <ListOfFriends user_id={userId} />
       ) : (
         <ListOfAskings user_id={userId} />
       )}

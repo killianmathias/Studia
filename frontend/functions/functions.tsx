@@ -51,7 +51,7 @@ export async function getUserXp(userId) {
     .from("User_providers")
     .select("user_id")
     .eq("provider_user_id", userId)
-    .single();
+    .limit(1);
 
   if (firstError) {
     Alert.alert("Erreur", firstError.message);
@@ -60,7 +60,7 @@ export async function getUserXp(userId) {
   const { data: xp, error: secondError } = await supabase
     .from("Users")
     .select("xp")
-    .eq("id", users_id.user_id);
+    .eq("id", users_id[0].user_id);
   if (secondError) {
     Alert.alert("Erreur", secondError.message);
     return 0;
@@ -96,6 +96,28 @@ export async function fetchUserInfos(userId) {
   return userInfos[0] || [];
 }
 
+export async function fetchUserInfosFromUserId(userId) {
+  if (!userId) {
+    console.warn("⚠️ fetchUserInfosFromUserId appelé sans userId");
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("Users")
+    .select(
+      "email, name, surname, date_of_birth, profile_picture, level, username"
+    )
+    .eq("id", userId)
+    .limit(1);
+
+  if (error) {
+    // Alert.alert("Erreur", error.message);
+    console.error("Erreur Supabase:", error.message);
+    return null;
+  }
+
+  return data && data.length > 0 ? data[0] : null;
+}
 export const formatTwoDigits = (num: number) => {
   return num.toString().padStart(2, "0");
 };
@@ -117,12 +139,24 @@ export async function fetchUserIdFromUsers(userId) {
   const { data, error } = await supabase
     .from("User_providers")
     .select("user_id")
-    .eq("provider_user_id", userId)
-    .single();
+    .eq("provider_user_id", userId);
   if (error) {
     Alert.alert("Une erreur est survenue");
     return "";
   }
-  console.log("Données utilisateur:", data);
-  return data.user_id;
+  return data[0].user_id;
+}
+
+export async function fetchAuthIdFromUserId(userId) {
+  if (!userId) return;
+
+  const { data, error } = await supabase
+    .from("User_providers")
+    .select("provider_user_id")
+    .eq("user_id", userId);
+  if (error) {
+    Alert.alert("Une erreur est survenue");
+    return "";
+  }
+  return data[0].provider_user_id;
 }
