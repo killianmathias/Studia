@@ -6,7 +6,7 @@ import {
   Alert,
   Button,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ThemedText from "../components/Themed/ThemedText";
 import ThemedSafeAreaView from "../components/Themed/ThemedSafeAreaView";
@@ -17,6 +17,8 @@ import DurationPicker from "../components/DurationPicker";
 const { height, width } = Dimensions.get("window");
 import { supabase } from "../lib/supabase";
 import * as DocumentPicker from "expo-document-picker";
+import TextualButton from "../components/TextualButton";
+import { ThemeContext } from "../context/ThemeContext";
 
 const AddExamScreen = () => {
   const [date, setDate] = useState(null);
@@ -70,9 +72,13 @@ const AddExamScreen = () => {
       Alert.alert("Succès");
     }
   }
+  const { theme } = useContext(ThemeContext);
   return (
     <ThemedSafeAreaView style={styles.addExamScreen}>
-      <ThemedText style={styles.addExamText} type="title">
+      <ThemedText
+        style={[styles.addExamText, { color: theme.primary }]}
+        type="title"
+      >
         Ajoutez un examen
       </ThemedText>
       <View style={styles.input}>
@@ -103,7 +109,11 @@ const AddExamScreen = () => {
         <CustomDateAndTimePicker value={date} onChange={setDate} />
         <DurationPicker value={duration} onChange={setDuration} />
       </View>
-      <Button title="Ajouter PDF" onPress={() => pickPdf()} />
+      <TextualButton
+        title="Ajouter PDF"
+        onPress={() => pickPdf()}
+        style={{ marginVertical: 10 }}
+      />
       <CustomButton title={"Ajouter"} onPress={() => addEvent()} />
     </ThemedSafeAreaView>
   );
@@ -125,5 +135,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     gap: width * 0.05,
+  },
+  addExamText: {
+    marginBottom: height * 0.03,
   },
 });

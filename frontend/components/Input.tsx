@@ -101,6 +101,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -114,6 +115,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
+    height: "100%",
   },
 });
 

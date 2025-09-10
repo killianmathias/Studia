@@ -59,7 +59,11 @@ const CustomDateAndTimePicker = ({ value, onChange }) => {
   return (
     <View>
       <TouchableOpacity
-        style={[styles.input, { borderColor: theme.primary }]}
+        style={[
+          styles.input,
+          { borderColor: theme.primary },
+          { backgroundColor: theme.surface },
+        ]}
         onPress={() => setVisible(true)}
       >
         <Ionicons
@@ -84,9 +88,15 @@ const CustomDateAndTimePicker = ({ value, onChange }) => {
       </TouchableOpacity>
 
       <Modal visible={visible} transparent animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.title}>Sélectionner date et heure</Text>
+        <View
+          style={[styles.modalContainer, { backgroundColor: theme.background }]}
+        >
+          <View
+            style={[styles.modalContent, { backgroundColor: theme.background }]}
+          >
+            <Text style={[styles.title, { color: theme.primary }]}>
+              Sélectionner date et heure
+            </Text>
 
             <View style={styles.pickers}>
               <Picker
@@ -172,7 +182,7 @@ const CustomDateAndTimePicker = ({ value, onChange }) => {
                 onPress={() => setVisible(false)}
                 style={styles.cancel}
               >
-                <Text>Annuler</Text>
+                <Text style={{ color: theme.textprimary }}>Annuler</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={confirmDate} style={styles.confirm}>
                 <Text style={{ color: "white" }}>OK</Text>

@@ -22,10 +22,11 @@ import { fetchUserId } from "../../functions/functions";
 
 const { height, width } = Dimensions.get("window");
 
-const Item = ({ id, title, theme, xp, imageUri, myId }) => {
+const Item = ({ id, title, xp, imageUri, myId }) => {
   const [loading, setLoading] = useState(false);
   const [signedUrl, setSignedUrl] = useState(null);
   const navigation = useNavigation();
+  const { theme } = useContext(ThemeContext);
 
   // ✅ Accepter une demande
   async function acceptRequest() {
@@ -128,12 +129,12 @@ const Item = ({ id, title, theme, xp, imageUri, myId }) => {
         <View style={styles.textContainer}>
           <ThemedText
             type="subtitle"
-            style={[styles.text, { color: theme.textPrimary }]}
+            style={[styles.text, { color: theme.textprimary }]}
           >
             @{title}
           </ThemedText>
           <ThemedText
-            style={[styles.playerLevel, { color: theme.textSecondary }]}
+            style={[styles.playerLevel, { color: theme.textsecondary }]}
           >
             Niveau {getLevelFromXp(xp).level}
           </ThemedText>

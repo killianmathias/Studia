@@ -21,8 +21,9 @@ import {
 import { supabase } from "../../lib/supabase";
 import { useNavigation } from "@react-navigation/native";
 
-const Item = ({ id, title, theme, xp, imageUri }) => {
+const Item = ({ id, title, xp, imageUri }) => {
   const [signedUrl, setSignedUrl] = useState(null);
+  const { theme } = useContext(ThemeContext);
 
   useEffect(() => {
     let isMounted = true;
@@ -59,12 +60,12 @@ const Item = ({ id, title, theme, xp, imageUri }) => {
         <View style={styles.textContainer}>
           <ThemedText
             type="subtitle"
-            style={[styles.text, { color: theme.textPrimary }]}
+            style={[styles.text, { color: theme.textprimary }]}
           >
             @{title}
           </ThemedText>
           <ThemedText
-            style={[styles.playerLevel, { color: theme.textSecondary }]}
+            style={[styles.playerLevel, { color: theme.textsecondary }]}
           >
             Niveau {getLevelFromXp(xp).level}
           </ThemedText>
@@ -135,7 +136,7 @@ const ListOfFriends = ({ user_id }) => {
   }, [userId]);
   return (
     <View style={styles.container}>
-      <ThemedText type="title" style={styles.title}>
+      <ThemedText type="title" style={[styles.title, { color: theme.primary }]}>
         Vos Amis
       </ThemedText>
       <FlatList
@@ -175,6 +176,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
+    marginTop: height * 0.02,
   },
   leftView: {
     width: "55%",
@@ -182,5 +184,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
   },
   text: { fontWeight: 900 },
-  title: { marginVertical: height * 0.01 },
+  title: { marginTop: height * 0.02 },
+  textContainer: {
+    width: "60%",
+  },
 });

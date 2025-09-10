@@ -16,9 +16,17 @@ import CustomButton from "../../components/CustomButton";
 import { useContext } from "react";
 import { ThemeContext } from "../../context/ThemeContext";
 import { SignInWithApple } from "./SignInWithApple";
+import TextualButton from "../../components/TextualButton";
+import GoogleLogin from "../../components/GoogleLogin";
+import {
+  CustomAlertProvider,
+  useAlert,
+  AlertButton,
+} from "../../components/CustomAlertService";
 const { width, height } = Dimensions.get("window");
 
 const LoginScreen = () => {
+  const { showAlert } = useAlert();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -34,6 +42,7 @@ const LoginScreen = () => {
     setLoading(false);
   }
   const navigation = useNavigation();
+
   return (
     <SafeAreaView
       style={[
@@ -51,7 +60,7 @@ const LoginScreen = () => {
           },
         ]}
       >
-        Connexion
+        Se connecter
       </Text>
       <View style={[styles.verticallySpaced, styles.mt20]}>
         <Input
@@ -83,16 +92,21 @@ const LoginScreen = () => {
       </View>
 
       <View style={styles.lineContainer}>
-        <View style={styles.line} />
-        <Text style={styles.text}>ou alors connectez-vous via</Text>
-        <View style={styles.line} />
+        <View style={[styles.line, { backgroundColor: theme.textsecondary }]} />
+        <Text style={[styles.text, { color: theme.textsecondary }]}>
+          ou alors connectez-vous via
+        </Text>
+        <View style={[styles.line, { backgroundColor: theme.textsecondary }]} />
       </View>
-      <SignInWithApple />
+      <View style={styles.otherLoginContainer}>
+        <GoogleLogin />
+        <SignInWithApple />
+      </View>
       <View style={[styles.verticallySpaced, styles.mt20]}>
-        <Text style={styles.registerText}>
+        <Text style={[styles.registerText, { color: theme.textprimary }]}>
           Vous n'avez pas encore de compte ?
         </Text>
-        <Button
+        <TextualButton
           title="Inscrivez-vous !"
           disabled={loading}
           onPress={() => navigation.navigate("RegisterStep1")}
@@ -143,5 +157,9 @@ const styles = StyleSheet.create({
     marginHorizontal: 10, // espace entre le texte et les lignes
     fontSize: 14,
     color: "#333",
+  },
+  otherLoginContainer: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 });

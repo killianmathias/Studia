@@ -39,3 +39,9 @@ yarn-error.*
 .env
 backend/.env
 frontend/.env
+frontend/android
+frontend/ios
+
+venv
+android
+ios

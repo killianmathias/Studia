@@ -6,6 +6,9 @@ import Input from "../../../components/Input";
 import CustomButton from "../../../components/CustomButton";
 import { SignInWithApple } from "./../SignInWithApple";
 import { ThemeContext } from "../../../context/ThemeContext";
+import ThemedText from "../../../components/Themed/ThemedText";
+import TextualButton from "../../../components/TextualButton";
+import GoogleLogin from "../../../components/GoogleLogin";
 // import LoginWithGoogle from "./LoginWithGoogle";
 
 const { width, height } = Dimensions.get("window");
@@ -26,7 +29,9 @@ const RegisterStep1Screen = () => {
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.background }]}
     >
-      <Text style={styles.title}>Créer un compte</Text>
+      <Text style={[styles.title, { color: theme.primary }]}>
+        Créer un compte
+      </Text>
 
       {/* Connexion par email */}
       <View style={styles.inputContainer}>
@@ -53,18 +58,41 @@ const RegisterStep1Screen = () => {
         <CustomButton title="Continuer" onPress={goToStep2} />
       </View>
       <View style={styles.lineContainer}>
-        <View style={styles.line} />
-        <Text style={styles.text}>ou inscrivez-vous via</Text>
-        <View style={styles.line} />
+        <View style={[styles.line, { backgroundColor: theme.textsecondary }]} />
+        <Text style={[styles.text, { color: theme.textsecondary }]}>
+          ou inscrivez-vous via
+        </Text>
+        <View style={[styles.line, { backgroundColor: theme.textsecondary }]} />
       </View>
 
       {/* Providers */}
       {/* <LoginWithGoogle /> */}
-      <SignInWithApple
-        onSuccess={(authUser) => {
-          // on passe juste le provider à l’étape 2
-          navigation.navigate("RegisterStep2", { provider: "apple", authUser });
-        }}
+      <View style={styles.otherLoginContainer}>
+        <GoogleLogin
+          onSuccess={(authUser) => {
+            navigation.navigate("RegisterStep2", {
+              provider: "google",
+              authUser,
+            });
+          }}
+        />
+        <SignInWithApple
+          onSuccess={(authUser) => {
+            // on passe juste le provider à l’étape 2
+            navigation.navigate("RegisterStep2", {
+              provider: "apple",
+              authUser,
+            });
+          }}
+        />
+      </View>
+
+      <Text style={[styles.textButton, { color: theme.textprimary }]}>
+        Vous avez déjà un compte ?
+      </Text>
+      <TextualButton
+        onPress={() => navigation.navigate("Connexion")}
+        title={"Connectez-vous !"}
       />
     </SafeAreaView>
   );
@@ -90,5 +118,13 @@ const styles = StyleSheet.create({
   text: { marginHorizontal: 10, fontSize: 14, color: "#333" },
   inputContainer: {
     marginTop: height * 0.01,
+  },
+  textButton: {
+    marginTop: height * 0.02,
+    fontSize: 18,
+  },
+  otherLoginContainer: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 });

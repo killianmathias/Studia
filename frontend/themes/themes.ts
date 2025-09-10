@@ -31,5 +31,5 @@ export const darkTheme = {
   textsecondary: "#D1D5DB",
   success: "#34D399",
   warning: "#FBBF24",
-  error: " #F87171 ",
+  error: "#F87171",
 };

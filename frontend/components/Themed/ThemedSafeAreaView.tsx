@@ -8,12 +8,13 @@ import React from "react";
 const { height, width } = Dimensions.get("window");
 import { useContext } from "react";
 import { ThemeContext } from "../../context/ThemeContext";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const ThemedSafeAreaView = ({ style, ...props }) => {
   const scheme = useColorScheme();
   const { theme, mode, setMode } = useContext(ThemeContext);
   return (
-    <RNSafeAreaView
+    <SafeAreaView
       style={[
         {
           backgroundColor: theme.background,

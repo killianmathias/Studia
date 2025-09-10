@@ -95,9 +95,7 @@ const Header = () => {
   }, [userId]);
 
   return (
-    <ThemedSafeAreaView
-      style={[styles.header, { backgroundColor: theme.surface }]}
-    >
+    <View style={[styles.header, { backgroundColor: theme.surface }]}>
       <ThemedText style={styles.text} type="subtitle">
         Bienvenue {user?.surname}
       </ThemedText>
@@ -115,7 +113,7 @@ const Header = () => {
           )}
         </TouchableOpacity>
       </View>
-    </ThemedSafeAreaView>
+    </View>
   );
 };
 

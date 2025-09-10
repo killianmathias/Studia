@@ -1,6 +1,8 @@
 import { Dimensions, Platform, Alert } from "react-native";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { supabase } from "../../lib/supabase";
+import { useContext } from "react";
+import { ThemeContext } from "../../context/ThemeContext";
 
 const { width } = Dimensions.get("window");
 
@@ -98,12 +100,17 @@ export function SignInWithApple() {
       }
     }
   }
+  const { mode } = useContext(ThemeContext);
 
   if (Platform.OS === "ios") {
     return (
       <AppleAuthentication.AppleAuthenticationButton
         buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP}
-        buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+        buttonStyle={
+          mode === "dark"
+            ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+            : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+        }
         cornerRadius={5}
         style={{ width: width * 0.15, height: width * 0.15 }}
         onPress={handleAppleSignIn}

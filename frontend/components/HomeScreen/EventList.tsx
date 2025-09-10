@@ -56,11 +56,14 @@ const EventList = () => {
   }, []);
 
   const sections = groupEventsByDay(events);
-
   const renderItem = ({ item }: { item: Event }) => (
     <View style={[styles.item, { backgroundColor: theme.surface }]}>
-      <Text style={styles.time}>{item.date.split("T")[1].slice(0, 5)}</Text>
-      <Text style={styles.title}>{item.title}</Text>
+      <Text style={[styles.time, { color: theme.textprimary }]}>
+        {item.date.split("T")[1].slice(0, 5)}
+      </Text>
+      <Text style={[styles.title, { color: theme.textprimary }]}>
+        {item.title}
+      </Text>
       <View
         style={[
           styles.indicator,
@@ -74,7 +77,9 @@ const EventList = () => {
 
   const renderSectionHeader = ({ section }: { section: Section }) => (
     <View style={styles.header}>
-      <Text style={styles.headerText}>{section.title}</Text>
+      <Text style={[styles.headerText, { color: theme.primary }]}>
+        {section.title}
+      </Text>
     </View>
   );
 
@@ -141,6 +146,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
     alignItems: "center",
+    marginTop: height * 0.02,
   },
   time: {
     marginRight: 10,

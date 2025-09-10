@@ -268,7 +268,9 @@ export default function ProfileScreen() {
               </View>
               <View style={styles.otherSignInContainer}>
                 <TouchableOpacity onPress={() => openModal()}>
-                  <Text>Voir mes calendriers</Text>
+                  <Text style={[styles.calendarBtn, { color: theme.primary }]}>
+                    Voir mes calendriers
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -292,8 +294,18 @@ export default function ProfileScreen() {
             onRequestClose={closeModal}
           >
             <View style={styles.modalBackground}>
-              <View style={styles.bottomSheetContainer}>
-                <View style={styles.handle} />
+              <View
+                style={[
+                  styles.bottomSheetContainer,
+                  { backgroundColor: theme.background },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.handle,
+                    { backgroundColor: theme.textsecondary },
+                  ]}
+                />
                 <ThemedText
                   style={{
                     fontSize: 18,
@@ -429,7 +441,7 @@ const styles = StyleSheet.create({
   handle: {
     width: 40,
     height: 5,
-    backgroundColor: "#ccc",
+    // backgroundColor: "#ccc",
     borderRadius: 2.5,
     marginBottom: 10,
   },
@@ -445,5 +457,9 @@ const styles = StyleSheet.create({
   },
   calendarName: {
     marginLeft: width * 0.04,
+  },
+  calendarBtn: {
+    fontSize: 18,
+    marginTop: height * 0.02,
   },
 });

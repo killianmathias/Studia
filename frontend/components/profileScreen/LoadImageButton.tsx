@@ -3,6 +3,7 @@ import * as FileSystem from "expo-file-system";
 import { Alert, Dimensions } from "react-native";
 import { View, StyleSheet, Button } from "react-native";
 import { supabase } from "../../lib/supabase";
+import TextualButton from "../TextualButton";
 
 const { width, height } = Dimensions.get("window");
 const LoadImageButton = ({ setLoading, setProfilePicture, userId }) => {
@@ -66,7 +67,7 @@ const LoadImageButton = ({ setLoading, setProfilePicture, userId }) => {
   }
   return (
     <View style={styles.changePPButtonContainer}>
-      <Button title="Changer Pdp" onPress={() => pickAndUploadImage()} />
+      <TextualButton title="Changer Pdp" onPress={() => pickAndUploadImage()} />
     </View>
   );
 };

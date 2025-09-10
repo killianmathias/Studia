@@ -15,7 +15,6 @@ import CalendarScreen from "./screens/CalendarScreen";
 import AddExamScreen from "./screens/AddExamScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 import FriendsScreen from "./screens/FriendsScreen";
-import OtherUsersScreen from "./screens/OtherUsersScreen";
 import RegisterStep1Screen from "./screens/Auth/Register/RegisterStep1Screen";
 import RegisterStep2Screen from "./screens/Auth/Register/RegisterStep2Screen";
 
@@ -26,6 +25,7 @@ import TabBar from "./components/TabBar";
 import { ThemeContext, ThemeProvider } from "./context/ThemeContext";
 import { fetchUserId } from "./functions/functions";
 import OtherProfileScreen from "./screens/OtherProfileScreen";
+import { CustomAlertProvider } from "./components/CustomAlertService";
 
 // --- Définition des types ---
 export type RootStackParamList = {
@@ -145,23 +145,25 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <NavigationContainer>
-        {isLoggedIn ? (
-          <MainTabs />
-        ) : (
-          <Stack.Navigator screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="Connexion" component={LoginScreen} />
-            <Stack.Screen
-              name="RegisterStep1"
-              component={RegisterStep1Screen}
-            />
-            <Stack.Screen
-              name="RegisterStep2"
-              component={RegisterStep2Screen}
-            />
-          </Stack.Navigator>
-        )}
-      </NavigationContainer>
+      <CustomAlertProvider>
+        <NavigationContainer>
+          {isLoggedIn ? (
+            <MainTabs />
+          ) : (
+            <Stack.Navigator screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="Connexion" component={LoginScreen} />
+              <Stack.Screen
+                name="RegisterStep1"
+                component={RegisterStep1Screen}
+              />
+              <Stack.Screen
+                name="RegisterStep2"
+                component={RegisterStep2Screen}
+              />
+            </Stack.Navigator>
+          )}
+        </NavigationContainer>
+      </CustomAlertProvider>
     </ThemeProvider>
   );
 }

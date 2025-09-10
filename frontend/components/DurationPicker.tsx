@@ -11,6 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { useContext } from "react";
 import { ThemeContext } from "../context/ThemeContext";
+import ThemedText from "./Themed/ThemedText";
 
 const { width, height } = Dimensions.get("window");
 
@@ -37,21 +38,39 @@ const DurationPicker = ({ value, onChange }) => {
   const formatValue = (val) => val.toString().padStart(2, "0");
 
   return (
-    <View>
-      <TouchableOpacity style={[styles.input]} onPress={() => setVisible(true)}>
+    <View
+    // style={[
+    //   { borderColor: theme.primary },
+    //   { backgroundColor: theme.surface },
+    // ]}
+    >
+      <TouchableOpacity
+        style={[
+          styles.input,
+          { borderColor: theme.primary },
+          { backgroundColor: theme.surface },
+        ]}
+        onPress={() => setVisible(true)}
+      >
         <Ionicons
           name="time"
           size={height * 0.035}
-          color={"#007bff"}
+          color={theme.primary}
           style={styles.icon}
         />
-        <Text>{`${formatValue(hours)}h${formatValue(minutes)}`}</Text>
+        <Text style={{ color: theme.textprimary }}>{`${formatValue(
+          hours
+        )}h${formatValue(minutes)}`}</Text>
       </TouchableOpacity>
 
       <Modal visible={visible} transparent animationType="slide">
         <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.title}>Sélectionner une durée</Text>
+          <View
+            style={[styles.modalContent, { backgroundColor: theme.background }]}
+          >
+            <ThemedText type="title" style={styles.title}>
+              Sélectionner une durée
+            </ThemedText>
 
             <View style={styles.pickers}>
               <Picker
@@ -90,7 +109,7 @@ const DurationPicker = ({ value, onChange }) => {
                 onPress={() => setVisible(false)}
                 style={styles.cancel}
               >
-                <Text>Annuler</Text>
+                <Text style={{ color: theme.textprimary }}>Annuler</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={confirmDuration}
