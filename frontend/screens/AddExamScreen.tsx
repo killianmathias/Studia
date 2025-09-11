@@ -19,6 +19,7 @@ import { supabase } from "../lib/supabase";
 import * as DocumentPicker from "expo-document-picker";
 import TextualButton from "../components/TextualButton";
 import { ThemeContext } from "../context/ThemeContext";
+import { useAlert } from "../components/CustomAlertService";
 
 const AddExamScreen = () => {
   const [date, setDate] = useState(null);
@@ -26,18 +27,34 @@ const AddExamScreen = () => {
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("");
   const [location, setLocation] = useState("");
+  const { showAlert } = useAlert();
 
-  async function pickPdf() {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: "application/pdf",
-    });
-    if (result.assets && result.assets.length > 0) {
-      console.log("PDF sélectionné :", result.assets[0].uri);
-      // ensuite -> upload vers ton backend
-    }
-  }
+  // async function pickPdf() {
+  //   const result = await DocumentPicker.getDocumentAsync({
+  //     type: "application/pdf",
+  //   });
+  //   if (result.assets && result.assets.length > 0) {
+  //     console.log("PDF sélectionné :", result.assets[0].uri);
+  //     // ensuite -> upload vers ton backend
+  //   }
+  // }
 
   async function addEvent() {
+    if (
+      title == "" ||
+      date == null ||
+      duration == null ||
+      location == "" ||
+      subject == ""
+    ) {
+      await showAlert({
+        type: "error",
+        title: "Erreur",
+        message: "Veuillez compléter tous les champs !",
+        buttons: [{ text: "OK", value: true }],
+      });
+      return;
+    }
     const { data, error } = await supabase
       .from("Event")
       .insert([
@@ -51,8 +68,12 @@ const AddExamScreen = () => {
       .select();
 
     if (error) {
-      Alert.alert("Erreur", error.message);
-      console.log(error.message);
+      await showAlert({
+        type: "error",
+        title: "Erreur",
+        message: error.message,
+        buttons: [{ text: "OK", value: true }],
+      });
       return null;
     }
     const eventId = data[0].id;
@@ -66,10 +87,25 @@ const AddExamScreen = () => {
       .select();
 
     if (error) {
-      Alert.alert("Erreur", error.message);
+      await showAlert({
+        type: "error",
+        title: "Erreur",
+        message: error.message,
+        buttons: [{ text: "OK", value: true }],
+      });
       return null;
     } else {
-      Alert.alert("Succès");
+      await showAlert({
+        type: "success",
+        title: "Succès",
+        message: "Examen ajouté avec succès.",
+        buttons: [{ text: "OK", value: true }],
+      });
+      setDate(null);
+      setDuration(null);
+      setLocation("");
+      setSubject("");
+      setTitle("");
     }
   }
   const { theme } = useContext(ThemeContext);

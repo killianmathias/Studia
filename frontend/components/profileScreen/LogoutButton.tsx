@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View, TouchableOpacity, Alert } from "react-native";
 import React from "react";
 import { supabase } from "../../lib/supabase";
+import { useAlert } from "../CustomAlertService";
 
 async function logOut() {
   const {
@@ -12,27 +13,23 @@ async function logOut() {
   }
 }
 
-function confirm() {
-  Alert.alert(
-    "Se déconnecter",
-    "Voulez-vous vous déconnecter ?",
-    [
-      {
-        text: "Non",
-        style: "cancel",
-      },
-      {
-        text: "Oui",
-        onPress: () => {
-          logOut();
-        },
-      },
-    ],
-    { cancelable: false }
-  );
-}
-
 const LogoutButton = () => {
+  const { showAlert } = useAlert();
+  const confirm = async () => {
+    const result = await showAlert({
+      title: "Se déconnecter",
+      message: "Voulez-vous vous déconnecter ?",
+      buttons: [
+        { text: "Non", value: false, style: { backgroundColor: "grey" } },
+        { text: "Oui", value: true },
+      ],
+    });
+    if (result) {
+      logOut();
+    } else {
+      return;
+    }
+  };
   return (
     <TouchableOpacity style={styles.logoutButton} onPress={confirm}>
       <Text style={{ color: "white", fontWeight: "700" }}>Se Déconnecter</Text>

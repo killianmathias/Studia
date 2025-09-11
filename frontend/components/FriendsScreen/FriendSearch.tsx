@@ -14,9 +14,9 @@ import {
 } from "react-native";
 import { supabase } from "../../lib/supabase";
 import { fetchUserId } from "../../functions/functions";
-import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { ThemeContext } from "../../context/ThemeContext";
+import { useAlert } from "../CustomAlertService";
 
 const { width, height } = Dimensions.get("window");
 
@@ -27,6 +27,7 @@ export default function FriendSearch() {
   const [visitorId, setVisitorId] = useState("");
   const [userId, setUserId] = useState("");
   const { theme } = useContext(ThemeContext);
+  const { showAlert } = useAlert();
 
   useEffect(() => {
     async function fetchVisitorId() {
@@ -36,10 +37,6 @@ export default function FriendSearch() {
     fetchVisitorId();
   }, []);
 
-  // Recherche d'utilisateur par username exact
-  function sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
   const checkFriendship = async (userId1, userId2) => {
     const { data, error } = await supabase
       .from("Friendships")
@@ -80,7 +77,12 @@ export default function FriendSearch() {
       .single();
 
     if (error && error.code !== "PGRST116") {
-      Alert.alert("Erreur", error.message);
+      await showAlert({
+        type: "error",
+        title: "Erreur",
+        message: error.message,
+        buttons: [{ text: "OK", value: true }],
+      });
       return;
     }
 
@@ -95,16 +97,31 @@ export default function FriendSearch() {
       ]);
 
       if (insertError) {
-        Alert.alert("Erreur", insertError.message);
+        await showAlert({
+          type: "error",
+          title: "Erreur",
+          message: error.message,
+          buttons: [{ text: "OK", value: true }],
+        });
       } else {
-        Alert.alert("Succès", "Demande d'ami envoyée !");
+        await showAlert({
+          type: "success",
+          title: "Succès",
+          message: "Demande d'amis envoyée !",
+          buttons: [{ text: "OK", value: true }],
+        });
       }
       return;
     }
 
     // Relation existante
     if (data.status === "accepted") {
-      Alert.alert("Info", "Vous êtes déjà amis !");
+      await showAlert({
+        type: "info",
+        title: "Information",
+        message: "Vous êtes déjà amis",
+        buttons: [{ text: "OK", value: true }],
+      });
       return;
     }
 
@@ -117,13 +134,27 @@ export default function FriendSearch() {
           .eq("id", data.id);
 
         if (updateError) {
-          Alert.alert("Erreur", updateError.message);
+          await showAlert({
+            type: "error",
+            title: "Erreur",
+            message: updateError.message,
+            buttons: [{ text: "OK", value: true }],
+          });
         } else {
-          Alert.alert("Succès", "Demande d'ami acceptée !");
+          await showAlert({
+            type: "success",
+            title: "Succès",
+            message: "Demande d'ami acceptée !",
+            buttons: [{ text: "OK", value: true }],
+          });
         }
       } else {
-        // L'utilisateur a déjà envoyé une demande
-        Alert.alert("Info", "Votre demande est déjà en attente.");
+        await showAlert({
+          type: "info",
+          title: "Information",
+          message: "Votre demande est déjà en attente.",
+          buttons: [{ text: "OK", value: true }],
+        });
       }
     }
   };
@@ -133,10 +164,12 @@ export default function FriendSearch() {
     setLoading(true);
     try {
       if (!visitorId) {
-        Alert.alert(
-          "Erreur",
-          "Identifiant visiteur introuvable. Réessayez plus tard."
-        );
+        await showAlert({
+          type: "error",
+          title: "Erreur",
+          message: "Identifiant visiteur introuvable. Réessayez plus tard.",
+          buttons: [{ text: "OK", value: true }],
+        });
         return;
       }
 
@@ -148,7 +181,12 @@ export default function FriendSearch() {
         .single();
 
       if (currentUserError) {
-        Alert.alert("Erreur", currentUserError.message);
+        await showAlert({
+          type: "error",
+          title: "Erreur",
+          message: currentUserError.message,
+          buttons: [{ text: "OK", value: true }],
+        });
         return;
       }
 
@@ -163,12 +201,22 @@ export default function FriendSearch() {
         .neq("id", currentUserId);
 
       if (error) {
-        Alert.alert("Erreur", error.message);
+        await showAlert({
+          type: "error",
+          title: "Erreur",
+          message: error,
+          buttons: [{ text: "OK", value: true }],
+        });
         return;
       }
 
       if (!data || data.length === 0) {
-        Alert.alert("Utilisateur introuvable");
+        await showAlert({
+          type: "error",
+          title: "Erreur",
+          message: "Utilisateur introuvable.",
+          buttons: [{ text: "OK", value: true }],
+        });
         return;
       }
 
@@ -178,7 +226,12 @@ export default function FriendSearch() {
       const userFriendships = await checkFriendship(currentUserId, targetId);
 
       if (userFriendships.areFriends) {
-        Alert.alert("Info", "Vous êtes déjà amis !");
+        await showAlert({
+          type: "info",
+          title: "Information",
+          message: "Vous êtes déjà amis.",
+          buttons: [{ text: "OK", value: true }],
+        });
         return;
       } else if (userFriendships.requestPending) {
         // handleFriendRequest utilise déjà des paramètres, on lui passe currentUserId
@@ -189,6 +242,12 @@ export default function FriendSearch() {
       await addFriend(currentUserId, targetId);
     } catch (err) {
       Alert.alert("Erreur", err.message ?? String(err));
+      await showAlert({
+        type: "error",
+        title: "Erreur",
+        message: err.message ?? String(err),
+        buttons: [{ text: "OK", value: true }],
+      });
     } finally {
       setLoading(false);
     }
@@ -197,11 +256,22 @@ export default function FriendSearch() {
   // Et modifie addFriend pour accepter requesterId
   const addFriend = async (requesterId, targetUserId) => {
     if (!requesterId) {
-      Alert.alert("Erreur", "Identifiant utilisateur manquant.");
+      await showAlert({
+        type: "error",
+        title: "Erreur",
+        message: "Identifiant utilisateur manquant.",
+        buttons: [{ text: "OK", value: true }],
+      });
       return;
     }
     if (!targetUserId) {
       Alert.alert("Erreur", "Identifiant de la cible manquant.");
+      await showAlert({
+        type: "error",
+        title: "Erreur",
+        message: "Identifiants de l'utilisateur cible manquants.",
+        buttons: [{ text: "OK", value: true }],
+      });
       return;
     }
 
@@ -214,33 +284,26 @@ export default function FriendSearch() {
     ]);
 
     if (error) {
-      Alert.alert("Erreur", error.message);
+      await showAlert({
+        type: "success",
+        title: "Succès",
+        message: "Requête rejetée",
+        buttons: [{ text: "OK", value: true }],
+      });
     } else {
-      Alert.alert("Succès", "Demande d'ami envoyée !");
+      await showAlert({
+        type: "success",
+        title: "Succès",
+        message: "Demande d'ami envoyée !",
+        buttons: [{ text: "OK", value: true }],
+      });
     }
   };
-
-  // const getAuthId = async (user_id) => {
-  //   if (!user_id) return "";
-
-  //   const { data: currentUserData, error: currentUserError } = await supabase
-  //     .from("User_providers")
-  //     .select("provider_user_id")
-  //     .eq("user_id", user_id)
-  //     .single();
-
-  //   if (currentUserError) {
-  //     Alert.alert("Erreur", currentUserError.message);
-  //     setLoading(false);
-  //     return;
-  //   }
-  //   return currentUserData.provider_user_id;
-  // };
   return (
     <View style={styles.container}>
       <View style={[styles.searchBar, { backgroundColor: theme.surface }]}>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { color: theme.textprimary }]}
           placeholder="Chercher un username..."
           value={query}
           onChangeText={setQuery}

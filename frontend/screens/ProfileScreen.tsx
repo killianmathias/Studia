@@ -36,6 +36,7 @@ import { Ionicons } from "@expo/vector-icons";
 const { width, height } = Dimensions.get("window");
 import * as ImagePicker from "expo-image-picker";
 import LoadImageButton from "../components/ProfileScreen/LoadImageButton";
+import { useAlert } from "../components/CustomAlertService";
 
 async function logOut() {
   const {
@@ -62,6 +63,7 @@ export default function ProfileScreen() {
   const [isConnectedApple, setIsConnectedApple] = useState(false);
   const [isConnectedGoogle, setIsConnectedGoogle] = useState(false);
   const route = useRoute();
+  const { showAlert } = useAlert();
 
   const { userId } = route.params;
   const openModal = () => {
@@ -114,27 +116,22 @@ export default function ProfileScreen() {
     setLoading(false);
   }, []);
 
-  function edit() {
+  async function edit() {
     if (editing == false) {
       setEditing(true);
     } else {
-      Alert.alert(
-        "Sauvegarde",
-        "Êtes vous sûrs de vouloir sauvegarder vos changements ?",
-        [
-          {
-            text: "Non",
-            style: "cancel",
-          },
-          {
-            text: "Oui",
-            onPress: () => {
-              saveChanges();
-            },
-          },
+      const result = await showAlert({
+        type: "confirm",
+        title: "Sauvegarde",
+        message: "Êtes vous sûrs de vouloir sauvegarder vos changements ?",
+        buttons: [
+          { text: "Non", value: false, style: { backgroundColor: "grey" } },
+          { text: "Oui", value: true },
         ],
-        { cancelable: false }
-      );
+      });
+      if (result) {
+        saveChanges();
+      }
     }
   }
 
@@ -146,7 +143,12 @@ export default function ProfileScreen() {
       .eq("provider", "email");
 
     if (idError || !providerData || providerData.length === 0) {
-      Alert.alert("Utilisateur introuvable");
+      await showAlert({
+        type: "error",
+        title: "Erreur",
+        message: "Utilisateur introuvable",
+        buttons: [{ text: "OK", value: true }],
+      });
       return;
     }
     const userId = providerData[0].user_id;
@@ -157,7 +159,12 @@ export default function ProfileScreen() {
       .eq("id", userId);
 
     if (emailError || !emailDatabase || emailDatabase.length === 0) {
-      Alert.alert("Impossible de récupérer l'email actuel");
+      await showAlert({
+        type: "error",
+        title: "Erreur",
+        message: "Impossible de récupérer l'adresse email actuelle",
+        buttons: [{ text: "OK", value: true }],
+      });
       return;
     }
 
@@ -165,7 +172,12 @@ export default function ProfileScreen() {
     if (email !== emailDatabase[0].email) {
       const { error: authError } = await supabase.auth.updateUser({ email });
       if (authError) {
-        Alert.alert("Erreur lors du changement d'email : " + authError.message);
+        await showAlert({
+          type: "error",
+          title: "Erreur",
+          message: "Une erreur est survenue lors du changement de l'email",
+          buttons: [{ text: "OK", value: true }],
+        });
         return; // on stoppe ici pour éviter une désyncro
       }
     }
@@ -185,9 +197,19 @@ export default function ProfileScreen() {
       .eq("id", userId);
 
     if (updateError) {
-      Alert.alert("Une erreur est survenue lors de la sauvegarde");
+      await showAlert({
+        type: "error",
+        title: "Erreur",
+        message: "Une erreur est survenue lors de la sauvegarde",
+        buttons: [{ text: "OK", value: true }],
+      });
     } else {
-      Alert.alert("Profil mis à jour avec succès !");
+      await showAlert({
+        type: "success",
+        title: "Succès",
+        message: "Votre action a été effectuée ✅",
+        buttons: [{ text: "OK", value: true }],
+      });
       setEditing(false);
     }
   }

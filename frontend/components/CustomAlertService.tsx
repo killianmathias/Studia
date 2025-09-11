@@ -10,6 +10,9 @@ import {
   TextStyle,
   ViewStyle,
 } from "react-native";
+import { ThemeContext } from "../context/ThemeContext";
+import { Ionicons } from "@expo/vector-icons";
+const { height } = Dimensions.get("window");
 
 const { width } = Dimensions.get("window");
 
@@ -20,7 +23,10 @@ export type AlertButton = {
   textStyle?: StyleProp<TextStyle>;
 };
 
+export type AlertType = "success" | "error" | "confirm" | "info";
+
 type AlertParams = {
+  type?: AlertType;
   title?: string;
   message: string;
   buttons: AlertButton[];
@@ -51,9 +57,18 @@ export const CustomAlertProvider: React.FC<Props> = ({ children }) => {
   const [resolveCallback, setResolveCallback] = useState<
     ((value: any) => void) | null
   >(null);
+  const [alertType, setAlertType] = useState<AlertType>("confirm");
 
-  const showAlert = ({ title, message, buttons }: AlertParams) => {
+  const { theme } = useContext(ThemeContext);
+
+  const showAlert = ({
+    type = "confirm",
+    title,
+    message,
+    buttons,
+  }: AlertParams) => {
     return new Promise<any>((resolve) => {
+      setAlertType(type);
       setTitle(title);
       setMessage(message);
       setButtons(buttons);
@@ -67,14 +82,66 @@ export const CustomAlertProvider: React.FC<Props> = ({ children }) => {
     setVisible(false);
   };
 
+  const getContainerStyle = () => {
+    switch (alertType) {
+      case "success":
+        return { borderLeftWidth: 6, borderLeftColor: theme.success };
+      case "error":
+        return { borderLeftWidth: 6, borderLeftColor: theme.error };
+      case "confirm":
+      case "info":
+      default:
+        return { borderLeftWidth: 6, borderLeftColor: theme.primary };
+    }
+  };
+
+  const getTitleColor = () => {
+    switch (alertType) {
+      case "success":
+        return theme.success;
+      case "error":
+        return theme.error;
+      default:
+        return theme.primary;
+    }
+  };
+  const getIcon = () => {
+    switch (alertType) {
+      case "success":
+        return "checkmark-circle";
+      case "error":
+        return "close-circle";
+      case "info":
+        return "information-circle";
+      default:
+        return "help-circle";
+    }
+  };
+
   return (
     <AlertContext.Provider value={{ showAlert }}>
       {children}
       <Modal transparent animationType="fade" visible={visible}>
         <View style={styles.overlay}>
-          <View style={styles.container}>
-            {title && <Text style={styles.title}>{title}</Text>}
-            <Text style={styles.message}>{message}</Text>
+          <View
+            style={[
+              styles.container,
+              { backgroundColor: theme.background },
+              getContainerStyle(),
+            ]}
+          >
+            <View style={styles.iconContainer}>
+              <Ionicons name={getIcon()} size={32} color={getTitleColor()} />
+            </View>
+
+            {title && (
+              <Text style={[styles.title, { color: getTitleColor() }]}>
+                {title}
+              </Text>
+            )}
+            <Text style={[styles.message, { color: theme.textprimary }]}>
+              {message}
+            </Text>
             <View style={styles.buttonContainer}>
               {buttons.map((btn, idx) => (
                 <Pressable
@@ -104,7 +171,6 @@ const styles = StyleSheet.create({
   },
   container: {
     width: width * 0.8,
-    backgroundColor: "white",
     borderRadius: 15,
     padding: 20,
     elevation: 5,
@@ -134,5 +200,8 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "white",
     fontWeight: "bold",
+  },
+  iconContainer: {
+    marginBottom: height * 0.02,
   },
 });

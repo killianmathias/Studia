@@ -19,6 +19,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { fetchUserId } from "../../functions/functions";
+import { useAlert } from "../CustomAlertService";
 
 const { height, width } = Dimensions.get("window");
 
@@ -27,72 +28,92 @@ const Item = ({ id, title, xp, imageUri, myId }) => {
   const [signedUrl, setSignedUrl] = useState(null);
   const navigation = useNavigation();
   const { theme } = useContext(ThemeContext);
+  const { showAlert } = useAlert();
+  async function acceptRequestBDD() {
+    setLoading(true);
+    const { error } = await supabase
+      .from("Friendships")
+      .update({ status: "accepted" })
+      .eq("requester", id)
+      .eq("addressee", myId);
+
+    setLoading(false);
+
+    if (error) {
+      await showAlert({
+        type: "error",
+        title: "Erreur",
+        message: error.message,
+        buttons: [{ text: "OK", value: true }],
+      });
+    } else {
+      await showAlert({
+        type: "success",
+        title: "Succès",
+        message: "Requête acceptée",
+        buttons: [{ text: "OK", value: true }],
+      });
+    }
+  }
+  async function rejectRequestBDD() {
+    setLoading(true);
+    const { error } = await supabase
+      .from("Friendships")
+      .delete()
+      .eq("requester", id)
+      .eq("addressee", myId);
+
+    setLoading(false);
+
+    if (error) {
+      await showAlert({
+        type: "error",
+        title: "Erreur",
+        message: error.message,
+        buttons: [{ text: "OK", value: true }],
+      });
+    } else {
+      await showAlert({
+        type: "success",
+        title: "Succès",
+        message: "Requête rejetée",
+        buttons: [{ text: "OK", value: true }],
+      });
+    }
+  }
 
   // ✅ Accepter une demande
   async function acceptRequest() {
     if (!id) return;
-
-    Alert.alert(
-      "Confirmer",
-      "Veux-tu accepter cette demande d'ami ?",
-      [
-        { text: "Annuler", style: "cancel" },
-        {
-          text: "Accepter",
-          onPress: async () => {
-            setLoading(true);
-            const { error } = await supabase
-              .from("Friendships")
-              .update({ status: "accepted" })
-              .eq("requester", id)
-              .eq("addressee", myId);
-
-            setLoading(false);
-
-            if (error) {
-              Alert.alert("Erreur", error.message);
-            } else {
-              Alert.alert("Succès", "Demande acceptée ✅");
-            }
-          },
-        },
+    const result = await showAlert({
+      type: "confirm",
+      title: "Confirmer",
+      message: "Veux-tu accepter cette demande d'ami ?",
+      buttons: [
+        { text: "Non", value: false, style: { backgroundColor: "grey" } },
+        { text: "Oui", value: true },
       ],
-      { cancelable: true }
-    );
+    });
+    if (result) {
+      acceptRequestBDD();
+    }
   }
 
   // ✅ Rejeter une demande
   async function rejectRequest() {
     if (!id) return;
-
-    Alert.alert(
-      "Confirmer",
-      "Veux-tu rejeter cette demande d'ami ?",
-      [
-        { text: "Annuler", style: "cancel" },
-        {
-          text: "Rejeter",
-          style: "destructive",
-          onPress: async () => {
-            setLoading(true);
-            const { error } = await supabase
-              .from("Friendships")
-              .delete()
-              .eq("requester", id)
-              .eq("addressee", myId);
-
-            setLoading(false);
-
-            if (error) {
-              Alert.alert("Erreur", error.message);
-            } else {
-              Alert.alert("Succès", "Demande rejetée ❌");
-            }
-          },
-        },
+    const result = await showAlert({
+      type: "confirm",
+      title: "Confirmer",
+      message: "Veux-tu rejeter cette demande d'ami ?",
+      buttons: [
+        { text: "Non", value: false, style: { backgroundColor: "grey" } },
+        { text: "Oui", value: true },
       ],
-      { cancelable: true }
-    );
+    });
+    if (result) {
+      rejectRequestBDD();
+    }
   }
 
   // ✅ Charger l'image de profil
