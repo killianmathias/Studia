@@ -8,8 +8,6 @@ import { SignInWithApple } from "./../SignInWithApple";
 import { ThemeContext } from "../../../context/ThemeContext";
 import ThemedText from "../../../components/Themed/ThemedText";
 import TextualButton from "../../../components/TextualButton";
-import GoogleLogin from "../../../components/GoogleLogin";
-// import LoginWithGoogle from "./LoginWithGoogle";
 
 const { width, height } = Dimensions.get("window");
 
@@ -68,14 +66,6 @@ const RegisterStep1Screen = () => {
       {/* Providers */}
       {/* <LoginWithGoogle /> */}
       <View style={styles.otherLoginContainer}>
-        <GoogleLogin
-          onSuccess={(authUser) => {
-            navigation.navigate("RegisterStep2", {
-              provider: "google",
-              authUser,
-            });
-          }}
-        />
         <SignInWithApple
           onSuccess={(authUser) => {
             // on passe juste le provider à l’étape 2

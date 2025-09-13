@@ -14,10 +14,17 @@
       }
     },
     "preview": {
-      "distribution": "internal"
+      "android": {
+        "buildType": "apk"
+      }
     },
     "production": {
       "distribution": "store"
+    },
+    "release": {
+      "android": {
+        "buildType": "app-bundle"
+      }
     }
   },
   "submit": {

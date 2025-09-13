@@ -1,5 +1,11 @@
 import React, { useEffect, useState, useContext } from "react";
-import { View, Pressable, StyleSheet, LayoutChangeEvent } from "react-native";
+import {
+  View,
+  Pressable,
+  StyleSheet,
+  LayoutChangeEvent,
+  Dimensions,
+} from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import Animated, {
   interpolate,
@@ -10,6 +16,7 @@ import Animated, {
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemeContext } from "../context/ThemeContext";
+const { height: screenHeight } = Dimensions.get("window");
 
 const icons: Record<string, keyof typeof Feather.glyphMap> = {
   home: "home",
@@ -64,7 +71,7 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
             position: "absolute",
             backgroundColor: theme.primary,
             borderRadius: 30,
-            marginHorizontal: 6,
+            marginLeft: (buttonWidth - 60) / 2,
             height: 60,
             width: 60,
           },

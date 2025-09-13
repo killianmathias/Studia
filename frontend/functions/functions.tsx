@@ -160,3 +160,26 @@ export async function fetchAuthIdFromUserId(userId) {
   }
   return data[0].provider_user_id;
 }
+
+export async function verifyProfileCompletion(userId) {
+  if (!userId) {
+    return false;
+  }
+  const { data, error } = await supabase
+    .from("User_providers")
+    .select("user_id")
+    .eq("provider_user_id", userId)
+    .single();
+  if (!data) {
+    return false;
+  }
+  const { data: userData, error: userError } = await supabase
+    .from("Users")
+    .select("*")
+    .eq("id", data.user_id);
+  if (!userData) {
+    return false;
+  } else {
+    return true;
+  }
+}

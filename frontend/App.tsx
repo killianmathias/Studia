@@ -7,6 +7,7 @@ import * as React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import CompleteSignUpScreen from "./screens/Auth/CompleteSignUpScreen";
 
 // Screens
 import LoginScreen from "./screens/Auth/LoginScreen";
@@ -23,7 +24,7 @@ import TabBar from "./components/TabBar";
 
 // Context & utils
 import { ThemeContext, ThemeProvider } from "./context/ThemeContext";
-import { fetchUserId } from "./functions/functions";
+import { fetchUserId, verifyProfileCompletion } from "./functions/functions";
 import OtherProfileScreen from "./screens/OtherProfileScreen";
 import { CustomAlertProvider } from "./components/CustomAlertService";
 
@@ -74,11 +75,13 @@ function FriendsNavigator({ route }) {
 // --- Tabs visibles après connexion ---
 function MainTabs() {
   const [userId, setUserId] = useState<string | null>(null);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   useEffect(() => {
     async function fetchUid() {
       const uid = await fetchUserId();
       setUserId(uid);
+      console.log(userId);
     }
     fetchUid();
   }, []); // 👈 tableau de dépendances vide
@@ -125,21 +128,83 @@ export default function App() {
   const { theme } = useContext(ThemeContext);
   const [session, setSession] = useState<Session | null>(null);
 
+  const [isProfileComplete, setIsProfileComplete] = useState(false);
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    let userSubscription: any;
+
+    async function init() {
+      // Vérifier la session initiale
+      const { data } = await supabase.auth.getSession();
+      const session = data.session;
       setSession(session);
       setIsLoggedIn(!!session);
-    });
 
+      if (session?.user?.id) {
+        // Étape 1 : récupérer le user_id depuis User_providers
+        const { data: userProvider, error: providerError } = await supabase
+          .from("User_providers")
+          .select("user_id")
+          .eq("provider_user_id", session.user.id)
+          .single();
+
+        if (providerError || !userProvider?.user_id) return;
+
+        const userId = userProvider.user_id;
+
+        // Étape 2 : récupérer le profil initial
+        const { data: user } = await supabase
+          .from("Users")
+          .select("*")
+          .eq("id", userId)
+          .single();
+
+        setIsProfileComplete(!!user?.username && !!user?.date_of_birth);
+
+        // Étape 3 : abonnement Realtime sur Users
+        userSubscription = supabase
+          .from(`Users:id=eq.${userId}`)
+          .on("INSERT", (payload) => {
+            const updatedUser = payload.new;
+            setIsProfileComplete(
+              !!updatedUser?.username && !!updatedUser?.date_of_birth
+            );
+          })
+          .subscribe();
+      }
+    }
+
+    init();
+
+    // Écouter les changements de session Auth
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (_event, session) => {
         setSession(session);
         setIsLoggedIn(!!session);
+
+        if (session?.user?.id) {
+          const { data: userProvider } = await supabase
+            .from("User_providers")
+            .select("user_id")
+            .eq("provider_user_id", session.user.id)
+            .single();
+
+          if (!userProvider?.user_id) return;
+
+          const { data: user } = await supabase
+            .from("Users")
+            .select("*")
+            .eq("id", userProvider.user_id)
+            .single();
+
+          setIsProfileComplete(!!user?.username && !!user?.date_of_birth);
+        }
       }
     );
 
     return () => {
       authListener.subscription.unsubscribe();
+      if (userSubscription) supabase.removeSubscription(userSubscription);
     };
   }, []);
 
@@ -147,7 +212,7 @@ export default function App() {
     <ThemeProvider>
       <CustomAlertProvider>
         <NavigationContainer>
-          {isLoggedIn ? (
+          {isLoggedIn && isProfileComplete ? (
             <MainTabs />
           ) : (
             <Stack.Navigator screenOptions={{ headerShown: false }}>

@@ -17,12 +17,9 @@ import { useContext } from "react";
 import { ThemeContext } from "../../context/ThemeContext";
 import { SignInWithApple } from "./SignInWithApple";
 import TextualButton from "../../components/TextualButton";
-import GoogleLogin from "../../components/GoogleLogin";
-import {
-  CustomAlertProvider,
-  useAlert,
-  AlertButton,
-} from "../../components/CustomAlertService";
+import { useAlert } from "../../components/CustomAlertService";
+import GoogleAuth from "../../components/GoogleAuth";
+import GoogleSignInButton from "../../components/GoogleAuth";
 const { width, height } = Dimensions.get("window");
 
 const LoginScreen = () => {
@@ -99,7 +96,7 @@ const LoginScreen = () => {
         <View style={[styles.line, { backgroundColor: theme.textsecondary }]} />
       </View>
       <View style={styles.otherLoginContainer}>
-        <GoogleLogin />
+        <GoogleSignInButton />
         <SignInWithApple />
       </View>
       <View style={[styles.verticallySpaced, styles.mt20]}>

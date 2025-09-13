@@ -15,8 +15,9 @@ import CustomDatePicker from "../../../components/CustomDatePicker";
 import LevelPicker from "../../../components/LevelPicker";
 import Checkbox from "expo-checkbox";
 import { ThemeContext } from "../../../context/ThemeContext";
-import { useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import LoadImageButton from "../../../components/ProfileScreen/LoadImageButton";
+import { fetchUserId } from "../../../functions/functions";
 
 const { width, height } = Dimensions.get("window");
 
@@ -32,10 +33,17 @@ function calculateAge(birthDate) {
 const RegisterStep2Screen = () => {
   const route = useRoute();
   const { email, password, provider, authUser } = route.params || {};
-  const [profile_picture, setProfile_picture] = useState("");
+  const names = authUser?.user_metadata?.full_name.split(" ");
+  const [profile_picture, setProfile_picture] = useState(
+    authUser?.user_metadata?.avatar_url || ""
+  );
   const [username, setUsername] = useState("");
-  const [surname, setSurname] = useState("");
-  const [name, setName] = useState("");
+  const [surname, setSurname] = useState(
+    authUser?.user_metadata?.family_name || names[0] || ""
+  );
+  const [name, setName] = useState(
+    authUser?.user_metadata?.given_name || names[1] || ""
+  );
   const [dateOfBirth, setDateOfBirth] = useState(null);
   const [level, setLevel] = useState("");
   const [checked, setChecked] = useState(false);
@@ -63,11 +71,13 @@ const RegisterStep2Screen = () => {
       return;
     }
 
+    setLoading(true);
+
     try {
       let user = authUser;
 
-      // si c’est une inscription email classique, on crée d’abord l’utilisateur
-      if (provider !== "apple" && email && password) {
+      // Pour les utilisateurs email classique
+      if (provider !== "google" && provider !== "apple" && email && password) {
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
         user = data.user;
@@ -75,34 +85,60 @@ const RegisterStep2Screen = () => {
 
       if (!user) throw new Error("Utilisateur non trouvé");
 
-      // enregistrement en DB
-      const { data: newUser, error: dbError } = await supabase
+      // Vérifier si l'utilisateur existe déjà dans Users
+      const { data: existingUser } = await supabase
         .from("Users")
-        .insert([
-          {
-            email: user.email,
-            name,
-            surname,
-            level,
-            date_of_birth: dateOfBirth,
-            username,
-          },
-        ])
-        .select()
+        .select("*")
+        .eq("id", user.id)
         .single();
 
-      if (dbError) throw dbError;
+      let newUserId = user.id;
+      let authId = await fetchUserId();
 
-      await supabase.from("User_providers").insert([
-        {
-          user_id: newUser.id,
-          provider_user_id: user.id,
-          provider: provider || "email",
-        },
-      ]);
+      // Si pas existant, insérer
+      if (!existingUser) {
+        const { data: newUser, error: dbError } = await supabase
+          .from("Users")
+          .insert([
+            {
+              email: user.email,
+              name,
+              surname,
+              level,
+              date_of_birth: dateOfBirth,
+              username,
+              profile_picture,
+            },
+          ])
+          .select()
+          .single();
+        if (dbError) throw dbError;
+        newUserId = newUser.id;
+
+        await supabase.from("User_providers").insert([
+          {
+            user_id: newUserId,
+            provider_user_id: authId,
+            provider: provider || "email",
+          },
+        ]);
+      } else {
+        // Sinon, update pour compléter les champs manquants
+        await supabase
+          .from("Users")
+          .update({
+            username,
+            name,
+            surname,
+            date_of_birth: dateOfBirth,
+            level,
+            profile_picture,
+          })
+          .eq("id", newUserId);
+      }
 
       Alert.alert("Inscription réussie !");
-    } catch (err) {
+    } catch (err: any) {
       Alert.alert("Erreur", err.message);
     } finally {
       setLoading(false);
