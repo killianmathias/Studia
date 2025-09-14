@@ -33,6 +33,7 @@ export type RootStackParamList = {
   Connexion: undefined;
   RegisterStep1: undefined;
   RegisterStep2: undefined;
+  MainTabs: undefined;
 };
 
 export type RootTabParamList = {
@@ -141,34 +142,31 @@ export default function App() {
       setIsLoggedIn(!!session);
 
       if (session?.user?.id) {
-        // Étape 1 : récupérer le user_id depuis User_providers
-        const { data: userProvider, error: providerError } = await supabase
+        const userId = session.user.id;
+
+        // Étape 1 : récupérer le profil
+        const { data: user, error } = await supabase
           .from("User_providers")
-          .select("user_id")
-          .eq("provider_user_id", session.user.id)
-          .single();
-
-        if (providerError || !userProvider?.user_id) return;
-
-        const userId = userProvider.user_id;
-
-        // Étape 2 : récupérer le profil initial
-        const { data: user } = await supabase
-          .from("Users")
           .select("*")
-          .eq("id", userId)
-          .single();
+          .eq("provider_user_id", userId)
+          .maybeSingle();
 
-        setIsProfileComplete(!!user?.username && !!user?.date_of_birth);
+        if (error) {
+          console.error("Erreur lors de la récupération du profil:", error);
+        }
 
-        // Étape 3 : abonnement Realtime sur Users
+        setIsProfileComplete(!!user);
+
+        // Étape 2 : abonnement Realtime sur Users
         userSubscription = supabase
-          .from(`Users:id=eq.${userId}`)
+          .from(`User_providers:provider_user_id=eq.${userId}`)
           .on("INSERT", (payload) => {
             const updatedUser = payload.new;
-            setIsProfileComplete(
-              !!updatedUser?.username && !!updatedUser?.date_of_birth
-            );
+            setIsProfileComplete(!!updatedUser);
+          })
+          .on("UPDATE", (payload) => {
+            const updatedUser = payload.new;
+            setIsProfileComplete(updatedUser);
           })
           .subscribe();
       }
@@ -183,21 +181,22 @@ export default function App() {
         setIsLoggedIn(!!session);
 
         if (session?.user?.id) {
-          const { data: userProvider } = await supabase
+          const userId = session.user.id;
+
+          const { data: user, error } = await supabase
             .from("User_providers")
-            .select("user_id")
-            .eq("provider_user_id", session.user.id)
-            .single();
-
-          if (!userProvider?.user_id) return;
-
-          const { data: user } = await supabase
-            .from("Users")
             .select("*")
-            .eq("id", userProvider.user_id)
-            .single();
+            .eq("provider_user_id", userId)
+            .maybeSingle();
 
-          setIsProfileComplete(!!user?.username && !!user?.date_of_birth);
+          if (error) {
+            console.error(
+              "Erreur lors du check profil après AuthChange:",
+              error
+            );
+          }
+
+          setIsProfileComplete(user);
         }
       }
     );
@@ -225,6 +224,7 @@ export default function App() {
                 name="RegisterStep2"
                 component={RegisterStep2Screen}
               />
+              <Stack.Screen name="MainTabs" component={MainTabs} />
             </Stack.Navigator>
           )}
         </NavigationContainer>

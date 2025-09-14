@@ -55,6 +55,8 @@ const RegisterStep2Screen = () => {
     if (dateOfBirth) setAge(calculateAge(dateOfBirth));
   }, [dateOfBirth]);
 
+  const navigation = useNavigation();
+
   async function finishRegistration() {
     if (username === "" || surname === "" || name === "") {
       Alert.alert(
@@ -76,7 +78,7 @@ const RegisterStep2Screen = () => {
     try {
       let user = authUser;
 
-      // Pour les utilisateurs email classique
+      // Utilisateur email classique
       if (provider !== "google" && provider !== "apple" && email && password) {
         const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
@@ -85,7 +87,7 @@ const RegisterStep2Screen = () => {
 
       if (!user) throw new Error("Utilisateur non trouvé");
 
-      // Vérifier si l'utilisateur existe déjà dans Users
+      // Vérifier si l'utilisateur existe déjà
       const { data: existingUser } = await supabase
         .from("Users")
         .select("*")
@@ -95,7 +97,6 @@ const RegisterStep2Screen = () => {
       let newUserId = user.id;
       let authId = await fetchUserId();
 
-      // Si pas existant, insérer
       if (!existingUser) {
         const { data: newUser, error: dbError } = await supabase
           .from("Users")
@@ -112,6 +113,7 @@ const RegisterStep2Screen = () => {
           ])
           .select()
           .single();
+
         if (dbError) throw dbError;
         newUserId = newUser.id;
 
@@ -123,7 +125,6 @@ const RegisterStep2Screen = () => {
           },
         ]);
       } else {
-        // Sinon, update pour compléter les champs manquants
         await supabase
           .from("Users")
           .update({
@@ -137,7 +138,12 @@ const RegisterStep2Screen = () => {
           .eq("id", newUserId);
       }
 
+      // Succès → redirection immédiate
       Alert.alert("Inscription réussie !");
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "MainTabs" as never }], // 👈 Il faut donner un vrai nom à ton composant MainTabs
+      });
     } catch (err: any) {
       Alert.alert("Erreur", err.message);
     } finally {
