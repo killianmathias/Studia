@@ -7,6 +7,7 @@ import {
 } from "@react-native-google-signin/google-signin";
 import { supabase } from "../lib/supabase";
 import { useNavigation } from "@react-navigation/native";
+import * as SecureStore from "expo-secure-store";
 
 export default function GoogleSignInButton() {
   const navigation = useNavigation();
@@ -15,6 +16,7 @@ export default function GoogleSignInButton() {
     scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
     webClientId:
       "955178443030-051q3cpk4c92m9ghh45ceq67csptigbd.apps.googleusercontent.com",
+    offlineAccess: true,
   });
 
   return (
@@ -25,13 +27,12 @@ export default function GoogleSignInButton() {
         try {
           await GoogleSignin.hasPlayServices();
           const userInfo = await GoogleSignin.signIn();
-
-          if (!userInfo.data?.idToken) throw new Error("No ID Token");
-
+          const { idToken, accessToken } = await GoogleSignin.getTokens();
+          await SecureStore.setItemAsync("googleAccessToken", accessToken);
           const { data: authData, error: authError } =
             await supabase.auth.signInWithIdToken({
               provider: "google",
-              token: userInfo.data.idToken,
+              token: idToken,
             });
 
           if (authError) throw authError;

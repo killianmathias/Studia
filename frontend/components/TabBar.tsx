@@ -16,7 +16,7 @@ import Animated, {
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemeContext } from "../context/ThemeContext";
-const { height: screenHeight } = Dimensions.get("window");
+const { height: screenHeight, width: screenWidth } = Dimensions.get("window");
 
 const icons: Record<string, keyof typeof Feather.glyphMap> = {
   home: "home",
@@ -115,7 +115,7 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
 
         const animatedIconStyle = useAnimatedStyle(() => {
           const scaleValue = interpolate(scale.value, [0, 1], [1, 1.3]);
-          const top = interpolate(scale.value, [0, 1], [0, 9]);
+          const top = interpolate(scale.value, [0, 1], [0, 75 / 8]);
           return {
             transform: [{ scale: scaleValue }],
             top,

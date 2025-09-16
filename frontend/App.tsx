@@ -200,7 +200,7 @@ export default function App() {
         }
       }
     );
-
+    console.log(session?.user.user_metadata);
     return () => {
       authListener.subscription.unsubscribe();
       if (userSubscription) supabase.removeSubscription(userSubscription);

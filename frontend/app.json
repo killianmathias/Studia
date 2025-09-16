@@ -2,12 +2,11 @@
   "expo": {
     "name": "Studia",
     "slug": "Studia",
-    "version": "1.0.0",
+    "scheme": "com.studia",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "scheme": "com.studia",
     "platforms": ["ios", "android"],
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -16,8 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.killianmathias.studia",
-      "usesAppleSignIn": true
+      "bundleIdentifier": "com.killianmathias.studia"
     },
     "android": {
       "adaptiveIcon": {
@@ -25,20 +23,22 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.killianmathias.studia"
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      "expo-apple-authentication",
-      [
-        "@react-native-google-signin/google-signin",
+      "package": "com.killianmathias.studia",
+      "intentFilters": [
         {
-          "iosUrlScheme": "com.googleusercontent.apps.955178443030-bt0irfl45md0sf5g25vkv7lv4c8oehi8"
+          "action": "VIEW",
+          "category": ["BROWSABLE", "DEFAULT"],
+          "data": [
+            {
+              "scheme": "com.studia",
+              "host": "auth",
+              "pathPrefix": "/callback"
+            }
+          ]
         }
       ]
-    ],
+    },
+    "plugins": ["expo-apple-authentication"],
     "extra": {
       "eas": {
         "projectId": "6cddeeb6-6359-41a5-94f5-8c870153679b"
