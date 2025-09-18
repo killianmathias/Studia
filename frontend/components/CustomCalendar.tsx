@@ -23,7 +23,7 @@ import { fetchUserId, fetchEvents } from "../functions/functions";
 import { CalendarEvent, SupabaseEvent } from "../types/types";
 import { getProvider } from "../functions/auth";
 import * as SecureStore from "expo-secure-store";
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
+// import { GoogleSignin } from "@react-native-google-signin/google-signin";
 
 const { width, height } = Dimensions.get("window");
 const BUTTONS = ["day", "week", "month"];
@@ -50,24 +50,24 @@ const CustomCalendar = () => {
       setEvents(formattedEvents);
 
       const providers = await getProvider();
-      if (providers.includes("google")) {
-        const { accessToken } = await GoogleSignin.getTokens();
-        const res = await fetch(
-          "https://www.googleapis.com/calendar/v3/calendars/primary/events",
-          {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          }
-        );
-        const data = await res.json();
-        if (data.items?.length) {
-          const googleEvents = data.items.map((item) => ({
-            title: item.summary || "Sans titre",
-            start: new Date(item.start?.dateTime || item.start?.date),
-            end: new Date(item.end?.dateTime || item.end?.date),
-          }));
-          setEvents((prev) => [...prev, ...googleEvents]);
-        }
-      }
+      // if (providers.includes("google")) {
+      //   const { accessToken } = await GoogleSignin.getTokens();
+      //   const res = await fetch(
+      //     "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+      //     {
+      //       headers: { Authorization: `Bearer ${accessToken}` },
+      //     }
+      //   );
+      //   const data = await res.json();
+      //   if (data.items?.length) {
+      //     const googleEvents = data.items.map((item) => ({
+      //       title: item.summary || "Sans titre",
+      //       start: new Date(item.start?.dateTime || item.start?.date),
+      //       end: new Date(item.end?.dateTime || item.end?.date),
+      //     }));
+      //     setEvents((prev) => [...prev, ...googleEvents]);
+      //   }
+      // }
     };
 
     loadAllEvents();

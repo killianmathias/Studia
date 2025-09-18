@@ -183,3 +183,26 @@ export async function verifyProfileCompletion(userId) {
     return true;
   }
 }
+
+export async function getUserLevel() {
+  const uid = await fetchUserId();
+  if (!uid) {
+    return;
+  }
+  const userId = await fetchUserIdFromUsers(uid);
+  if (!userId) {
+    return;
+  }
+  const { data, error } = await supabase
+    .from("Users")
+    .select("level")
+    .eq("id", userId)
+    .single();
+  if (error) {
+    console.log("Erreur: ", error.message);
+  }
+  if (!data) {
+    return;
+  }
+  return data.level;
+}

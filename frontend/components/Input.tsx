@@ -23,6 +23,8 @@ interface InputProps extends TextInputProps {
   containerStyle?: ViewStyle | ViewStyle[];
   inputStyle?: TextStyle | TextStyle[];
   type?: string;
+  number?: number;
+  inputWidth?: number;
 }
 
 const Input: React.FC<InputProps> = ({
@@ -38,6 +40,7 @@ const Input: React.FC<InputProps> = ({
   containerStyle,
   type,
   number = 1,
+  inputWidth = width * 0.9,
   ...props
 }) => {
   const { theme, setMode, mode } = useContext(ThemeContext);
@@ -53,7 +56,7 @@ const Input: React.FC<InputProps> = ({
         {
           borderColor: theme.primary,
         },
-        { width: (width * 0.9) / number - (number - 1) * 5 },
+        { width: inputWidth / number - (number - 1) * 5 },
       ]}
     >
       {icon && (

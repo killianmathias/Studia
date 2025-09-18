@@ -96,7 +96,7 @@ const LoginScreen = () => {
         <View style={[styles.line, { backgroundColor: theme.textsecondary }]} />
       </View>
       <View style={styles.otherLoginContainer}>
-        <GoogleSignInButton />
+        {/* <GoogleSignInButton /> */}
         <SignInWithApple />
       </View>
       <View style={[styles.verticallySpaced, styles.mt20]}>
