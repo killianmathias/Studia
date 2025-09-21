@@ -1,3 +1,4 @@
+import { supabase } from "../lib/supabase";
 async function getNumberOfSessions(userId) {
   if (!userId) return 0;
 
@@ -5,7 +6,6 @@ async function getNumberOfSessions(userId) {
     .from("Event")
     .select("id")
     .eq("user_id", userId);
-
   if (eventsError) {
     console.error(eventsError);
     return;
@@ -14,6 +14,7 @@ async function getNumberOfSessions(userId) {
   const eventIds = events.map((e) => e.id);
 
   if (eventIds.length === 0) {
+    console.log("Pas d'événement");
     return 0;
   }
   const { count, error: sessionsError } = await supabase
@@ -46,24 +47,23 @@ async function getTotalHours(userId) {
   }
 
   const eventIds = events.map((e) => e.id);
-
   if (eventIds.length === 0) {
     return totalHours;
   }
   const { data, error: sessionsError } = await supabase
     .from("Session")
-    .select("duration_done", { head: true })
+    .select("duration_done")
     .in("event_id", eventIds)
     .eq("finished", true);
-
   if (sessionsError) {
     console.error(sessionsError);
     return totalHours;
   }
   let sum = 0;
-  for (const duration in data) {
-    sum + duration.duration_done;
-  }
+  data.forEach((duration) => {
+    sum += duration.duration_done;
+  });
+
   totalHours.minutes = sum % 60;
   totalHours.hours = (sum - (sum % 60)) / 60;
   return totalHours;
@@ -75,7 +75,8 @@ async function getFinishPercentage(userId) {
   const { data: events, error: eventsError } = await supabase
     .from("Event")
     .select("id")
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .lt("date", new Date().toISOString());
 
   if (eventsError) {
     console.error(eventsError);
@@ -89,19 +90,23 @@ async function getFinishPercentage(userId) {
   }
   const { data, error: sessionsError } = await supabase
     .from("Session")
-    .select("*", { head: true })
+    .select("*")
     .in("event_id", eventIds);
 
   if (sessionsError) {
     console.error(sessionsError);
+
     return 0;
   }
   let sum = 0;
-  for (const session in data) {
+  console.log(data);
+  data.forEach((session) => {
+    console.log(session);
     if (session.finished) {
       sum++;
+      console.log(sum);
     }
-  }
+  });
   return (sum / data.length) * 100;
 }
 
@@ -166,7 +171,9 @@ export async function getTopSubject(userId: string) {
 export async function getUserStats(userId) {
   const nbSession = await getNumberOfSessions(userId);
   const totalHours = await getTotalHours(userId);
+
   const percentageFinished = await getFinishPercentage(userId);
+
   const favoriteSubject = await getTopSubject(userId);
   return { nbSession, totalHours, percentageFinished, favoriteSubject };
 }

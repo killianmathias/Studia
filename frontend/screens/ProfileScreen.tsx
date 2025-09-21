@@ -24,6 +24,7 @@ import {
   fetchUserInfos,
   fetchUserInfosWithAuthId,
   fetchUserInfosWithUserId,
+  useUserInfos,
 } from "../functions/functions";
 import CustomDatePicker from "../components/CustomDatePicker";
 import LevelPicker from "../components/LevelPicker";
@@ -76,7 +77,8 @@ export default function ProfileScreen() {
     setLoading(true);
     async function fetchUser() {
       console.log(userId);
-      const data = await fetchUserInfos(userId);
+      const data = useUserInfos(userId);
+      console.log(data);
       if (data) {
         setName(data.name);
         setSurname(data.surname);

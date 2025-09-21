@@ -1,4 +1,11 @@
-import { StyleSheet, Text, View, SectionList, Dimensions } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  SectionList,
+  Dimensions,
+  TouchableOpacity,
+} from "react-native";
 import React, { useState, useEffect, useContext } from "react";
 import { supabase } from "../../lib/supabase";
 import { ThemeContext } from "../../context/ThemeContext";
@@ -9,6 +16,7 @@ import { Section } from "../../types/types";
 import { SupabaseEvent } from "../../types/types";
 import CustomButton from "../CustomButton";
 import { useNavigation } from "@react-navigation/native";
+import { useEvents } from "../../functions/events";
 
 const formatDate = (isoDate: string) => {
   const date = new Date(isoDate);
@@ -37,27 +45,22 @@ const groupEventsByDay = (events: SupabaseEvent[]): Section[] => {
   return Object.keys(grouped)
     .sort()
     .map((day) => ({
-      title: formatDate(grouped[day][0].date), // Utilise le format lisible
+      title: formatDate(grouped[day][0].date),
       data: grouped[day],
     }));
 };
 
 const EventList = () => {
-  const [events, setEvents] = useState<SupabaseEvent[]>([]);
   const { theme } = useContext(ThemeContext);
   const navigation = useNavigation();
-
-  useEffect(() => {
-    const loadEvents = async () => {
-      const data = await fetchEvents();
-      setEvents(data);
-    };
-    loadEvents();
-  }, []);
+  const { events, loading } = useEvents();
 
   const sections = groupEventsByDay(events);
   const renderItem = ({ item }: { item: Event }) => (
-    <View style={[styles.item, { backgroundColor: theme.surface }]}>
+    <TouchableOpacity
+      style={[styles.item, { backgroundColor: theme.surface }]}
+      onPress={() => navigation.navigate("EventDetail", { item: item })}
+    >
       <Text style={[styles.time, { color: theme.textprimary }]}>
         {item.date.split("T")[1].slice(0, 5)}
       </Text>
@@ -72,7 +75,7 @@ const EventList = () => {
           },
         ]}
       ></View>
-    </View>
+    </TouchableOpacity>
   );
 
   const renderSectionHeader = ({ section }: { section: Section }) => (
@@ -120,7 +123,7 @@ export default EventList;
 const styles = StyleSheet.create({
   container: {
     width: width,
-    height: 0.9 * height,
+    height: 0.7 * height,
   },
   titleContainer: {
     height: 0.05 * height,

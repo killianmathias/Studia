@@ -8,11 +8,11 @@ import {
   Image,
   TouchableOpacity,
 } from "react-native";
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import ThemedText from "../Themed/ThemedText";
 const { height, width } = Dimensions.get("window");
-import { useEffect } from "react";
 import { ThemeContext } from "../../context/ThemeContext";
+import { Ionicons } from "@expo/vector-icons";
 import {
   fetchUserIdFromUsers,
   getLevelFromXp,
@@ -20,10 +20,13 @@ import {
 } from "../../functions/functions";
 import { supabase } from "../../lib/supabase";
 import { useNavigation } from "@react-navigation/native";
+import { useAlert } from "../CustomAlertService";
 
-const Item = ({ id, title, xp, imageUri }) => {
+const Item = ({ id, title, xp, imageUri, userId, refreshFriends }) => {
   const [signedUrl, setSignedUrl] = useState(null);
   const { theme } = useContext(ThemeContext);
+  const navigation = useNavigation();
+  const { showAlert } = useAlert();
 
   useEffect(() => {
     let isMounted = true;
@@ -40,7 +43,34 @@ const Item = ({ id, title, xp, imageUri }) => {
       isMounted = false;
     };
   }, [imageUri]);
-  const navigation = useNavigation();
+
+  async function deleteFriendship(friendId) {
+    const result = await showAlert({
+      type: "confirm",
+      title: "Confirmer",
+      message: "Veux-tu supprimer cet ami ?",
+      buttons: [
+        { text: "Non", value: false, style: { backgroundColor: "grey" } },
+        { text: "Oui", value: true },
+      ],
+    });
+    if (result) {
+      const { data, error } = await supabase
+        .from("Friendships")
+        .delete()
+        .or(
+          `and(requester.eq.${userId},addressee.eq.${friendId}),and(requester.eq.${friendId},addressee.eq.${userId})`
+        );
+
+      if (error) {
+        Alert.alert("Erreur", error.message);
+      } else {
+        console.log("Amitié supprimée :", data);
+        refreshFriends(); // recharge la liste après suppression
+      }
+    }
+  }
+
   return (
     <TouchableOpacity
       style={[styles.item, { backgroundColor: theme.surface }]}
@@ -61,6 +91,7 @@ const Item = ({ id, title, xp, imageUri }) => {
           <ThemedText
             type="subtitle"
             style={[styles.text, { color: theme.textprimary }]}
+            numberOfLines={1}
           >
             @{title}
           </ThemedText>
@@ -71,6 +102,11 @@ const Item = ({ id, title, xp, imageUri }) => {
           </ThemedText>
         </View>
       </View>
+      <View style={styles.rightView}>
+        <TouchableOpacity onPress={() => deleteFriendship(id)}>
+          <Ionicons name="trash" size={height * 0.04} color={theme.error} />
+        </TouchableOpacity>
+      </View>
     </TouchableOpacity>
   );
 };
@@ -78,62 +114,61 @@ const Item = ({ id, title, xp, imageUri }) => {
 const ListOfFriends = ({ user_id }) => {
   const [friends, setFriends] = useState([]);
   const [userId, setUserId] = useState("");
-  const [signedUrl, setSignedUrl] = useState("");
-
   const { theme } = useContext(ThemeContext);
 
   useEffect(() => {
     async function fetchUserId() {
       const id = await fetchUserIdFromUsers(user_id);
-      console.log(id);
       setUserId(id);
     }
     fetchUserId();
   }, [user_id]);
+
+  async function fetchFriends() {
+    if (!userId) return;
+
+    // Relations où l'utilisateur est requester ou addressee
+    const { data, error } = await supabase
+      .from("Friendships")
+      .select("requester, addressee, status")
+      .or(`requester.eq.${userId},addressee.eq.${userId}`)
+      .eq("status", "accepted");
+
+    if (error) {
+      Alert.alert("Une erreur est survenue", error.message);
+      return;
+    }
+
+    // Extraire les IDs amis
+    const friendIds = data
+      ? data.map((row) =>
+          row.requester === userId ? row.addressee : row.requester
+        )
+      : [];
+
+    if (friendIds.length === 0) {
+      setFriends([]);
+      return;
+    }
+
+    // Charger les infos des amis
+    const { data: friendsData, error: friendsError } = await supabase
+      .from("Users")
+      .select("*")
+      .in("id", friendIds);
+
+    if (friendsError) {
+      Alert.alert("Une erreur est survenue", friendsError.message);
+      return;
+    }
+
+    setFriends(friendsData);
+  }
+
   useEffect(() => {
-    async function fetchFriends() {
-      // On récupère toutes les relations où l'utilisateur est soit requester, soit addressee
-      const { data, error } = await supabase
-        .from("Friendships")
-        .select("requester, addressee, status")
-        .or(`requester.eq.${userId},addressee.eq.${userId}`)
-        .eq("status", "accepted"); // facultatif : ne récupérer que les vrais amis
-      console.log(data);
-      if (error) {
-        Alert.alert("Une erreur est survenue", error.message);
-        return;
-      }
-
-      // Extraire les IDs amis (différents de userId)
-      const friendIds = data
-        ? data.map((row) =>
-            row.requester === userId ? row.addressee : row.requester
-          )
-        : [];
-
-      if (friendIds.length === 0) {
-        setFriends([]);
-        return;
-      }
-
-      // Charger les infos des amis
-      const { data: friendsData, error: friendsError } = await supabase
-        .from("Users")
-        .select("*")
-        .in("id", friendIds);
-
-      if (friendsError) {
-        Alert.alert("Une erreur est survenue", friendsError.message);
-        return;
-      }
-
-      setFriends(friendsData);
-    }
-
-    if (userId) {
-      fetchFriends();
-    }
+    fetchFriends();
   }, [userId]);
+
   return (
     <View style={styles.container}>
       <ThemedText type="title" style={[styles.title, { color: theme.primary }]}>
@@ -149,6 +184,8 @@ const ListOfFriends = ({ user_id }) => {
             xp={item.xp}
             imageUri={item.profile_picture}
             id={item.id}
+            userId={userId}
+            refreshFriends={fetchFriends}
           />
         )}
       />
@@ -179,13 +216,20 @@ const styles = StyleSheet.create({
     marginTop: height * 0.02,
   },
   leftView: {
-    width: "55%",
+    width: "75%",
     flexDirection: "row",
     justifyContent: "space-around",
   },
   text: { fontWeight: 900 },
   title: { marginTop: height * 0.02 },
   textContainer: {
-    width: "60%",
+    width: "70%",
+  },
+  rightView: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: width * 0.04,
+    width: "25%",
+    justifyContent: "center",
   },
 });

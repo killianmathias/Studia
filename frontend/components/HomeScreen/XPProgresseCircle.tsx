@@ -1,16 +1,21 @@
-import React, { useContext } from "react";
-import { View, Image, StyleSheet, Text, Dimensions } from "react-native";
+import React, { useContext, useState, useEffect, useRef } from "react";
+import {
+  View,
+  Image,
+  StyleSheet,
+  Text,
+  Dimensions,
+  Animated,
+} from "react-native";
 import Svg, { Circle } from "react-native-svg";
 import { ThemeContext } from "../../context/ThemeContext";
-import ThemedText from "../Themed/ThemedText";
 import {
   getLevelFromXp,
   getSignedUrlFromPath,
-  getUserXp,
+  useUserXp,
 } from "../../functions/functions";
-import { useState, useEffect } from "react";
 
-const { height, width } = Dimensions.get("window");
+const { height } = Dimensions.get("window");
 
 interface XPProgressCircleProps {
   size: number;
@@ -18,6 +23,8 @@ interface XPProgressCircleProps {
   imageUri: string;
   uid: string;
 }
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 export default function XPProgressCircle({
   size,
@@ -29,25 +36,38 @@ export default function XPProgressCircle({
   const circumference = 2 * Math.PI * radius;
 
   const { theme } = useContext(ThemeContext);
-  const [userXp, setUserXp] = useState(0);
+  const userXp = useUserXp(uid);
   const [signedUrl, setSignedUrl] = useState("");
-  useEffect(() => {
-    const loadUser = async () => {
-      const xp = await getUserXp(uid);
-      const xpValue = xp[0]?.xp || 0;
-      setUserXp(xpValue || 0);
-    };
-    loadUser();
-  }, []);
+  const [level, setLevel] = useState(0);
+  const [progress, setProgress] = useState(0); // 0 à 1
 
+  const animatedValue = useRef(new Animated.Value(circumference)).current;
+
+  // Charger l'image
   useEffect(() => {
     async function setUrl() {
       setSignedUrl(await getSignedUrlFromPath(imageUri));
     }
     setUrl();
   }, [imageUri]);
-  const strokeDashoffset =
-    circumference * (1 - userXp / getLevelFromXp(userXp).nextLevelXp);
+
+  // Met à jour le niveau et la progression à chaque changement de XP
+  useEffect(() => {
+    const xpData = getLevelFromXp(userXp);
+    const newProgress = Math.min(xpData.currentXp / xpData.nextLevelXp, 1);
+    console.log(xpData.currentXp);
+    setLevel(xpData.level);
+    setProgress(newProgress);
+
+    const finalOffset = circumference * (1 - newProgress);
+
+    Animated.timing(animatedValue, {
+      toValue: finalOffset,
+      duration: 1000,
+      useNativeDriver: false,
+    }).start();
+  }, [userXp]);
+
   return (
     <View
       style={{
@@ -58,7 +78,6 @@ export default function XPProgressCircle({
       }}
     >
       <Svg width={size} height={size}>
-        {/* Cercle de fond */}
         <Circle
           stroke="#eee"
           fill="none"
@@ -67,8 +86,7 @@ export default function XPProgressCircle({
           r={radius}
           strokeWidth={strokeWidth}
         />
-        {/* Cercle de progression */}
-        <Circle
+        <AnimatedCircle
           stroke={theme.primary}
           fill="none"
           cx={size / 2}
@@ -76,13 +94,13 @@ export default function XPProgressCircle({
           r={radius}
           strokeWidth={strokeWidth}
           strokeDasharray={`${circumference} ${circumference}`}
-          strokeDashoffset={strokeDashoffset}
+          strokeDashoffset={animatedValue}
           strokeLinecap="round"
           rotation="-90"
           origin={`${size / 2}, ${size / 2}`}
         />
       </Svg>
-      {/* Image au centre */}
+
       <Image
         source={
           imageUri
@@ -98,6 +116,7 @@ export default function XPProgressCircle({
           left: strokeWidth,
         }}
       />
+
       <View
         style={[
           styles.levelContainer,
@@ -108,16 +127,17 @@ export default function XPProgressCircle({
             bottom: -size / 8,
             left: "50%",
             transform: [
-              { translateX: -(height * 0.02 + (size / height) * 50) / 2 }, // centrage horizontal
+              { translateX: -(height * 0.02 + (size / height) * 50) / 2 },
             ],
           },
         ]}
       >
-        <Text style={[styles.level]}>{getLevelFromXp(userXp).level}</Text>
+        <Text style={[styles.level]}>{level}</Text>
       </View>
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   levelContainer: {
     position: "absolute",
@@ -126,7 +146,7 @@ const styles = StyleSheet.create({
     borderRadius: 100,
   },
   level: {
-    fontWeight: 700,
+    fontWeight: "700",
     fontSize: 15,
     color: "#FFFFFF",
   },

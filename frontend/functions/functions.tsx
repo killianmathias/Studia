@@ -1,6 +1,7 @@
 import { supabase } from "../lib/supabase";
 import { SupabaseEvent, CalendarEvent } from "../types/types";
 import { Alert } from "react-native";
+import { useState, useEffect } from "react";
 export async function fetchUserId() {
   const {
     data: { user },
@@ -38,62 +39,139 @@ export function getLevelFromXp(xp: number) {
   while (xp >= getXpForLevel(level + 1)) {
     level++;
   }
-
-  const currentXp = xp - getXpForLevel(level);
+  let currentXp = xp;
+  if (level > 1) {
+    currentXp = xp - getXpForLevel(level);
+  }
   const nextLevelXp = getXpForLevel(level + 1) - getXpForLevel(level);
 
   return { level, currentXp, nextLevelXp };
 }
-export async function getUserXp(userId) {
-  if (!userId) return 0;
 
-  const { data: users_id, error: firstError } = await supabase
-    .from("User_providers")
-    .select("user_id")
-    .eq("provider_user_id", userId)
-    .limit(1);
+export function useUserXp(providerUserId) {
+  const [xp, setXp] = useState(0);
 
-  if (firstError) {
-    Alert.alert("Erreur", firstError.message);
-    return 0;
-  }
-  const { data: xp, error: secondError } = await supabase
-    .from("Users")
-    .select("xp")
-    .eq("id", users_id[0].user_id);
-  if (secondError) {
-    Alert.alert("Erreur", secondError.message);
-    return 0;
-  }
-  return xp || 0;
+  useEffect(() => {
+    if (!providerUserId) return;
+
+    let userId;
+    let subscription;
+
+    const fetchInitialXp = async () => {
+      // Récupérer le user_id à partir du providerUserId
+      const { data: users_id, error: firstError } = await supabase
+        .from("User_providers")
+        .select("user_id")
+        .eq("provider_user_id", providerUserId)
+        .single();
+
+      if (firstError) return console.error(firstError.message);
+
+      userId = users_id.user_id;
+
+      // Récupérer l'XP initiale
+      const { data: xpData, error: secondError } = await supabase
+        .from("Users")
+        .select("xp")
+        .eq("id", userId)
+        .single();
+
+      if (secondError) return console.error(secondError.message);
+
+      setXp(xpData?.xp || 0);
+
+      // Subscription Realtime sur l'utilisateur
+      subscription = supabase
+        .channel(`realtime-user-xp-${userId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "Users",
+            filter: `id=eq.${userId}`,
+          },
+          (payload) => {
+            setXp(payload.new.xp || 0);
+          }
+        )
+        .subscribe();
+    };
+
+    fetchInitialXp();
+
+    // Nettoyage de la subscription à la destruction du composant
+    return () => {
+      if (subscription) {
+        supabase.removeChannel(subscription);
+      }
+    };
+  }, [providerUserId]);
+
+  return xp;
 }
+export function useUserInfos(providerUserId) {
+  const [userInfos, setUserInfos] = useState(null);
 
-export async function fetchUserInfos(userId) {
-  if (!userId) return [];
+  useEffect(() => {
+    if (!providerUserId) return;
 
-  const { data: users_id, error: firstError } = await supabase
-    .from("User_providers")
-    .select("user_id")
-    .eq("provider_user_id", userId)
-    .single();
+    let userId;
+    let subscription;
 
-  if (firstError) {
-    Alert.alert("Erreur", firstError.message);
-    return [];
-  }
-  const { data: userInfos, error: secondError } = await supabase
-    .from("Users")
-    .select(
-      "email, name, surname, date_of_birth, profile_picture, level, username"
-    )
-    .eq("id", users_id.user_id);
-  if (secondError) {
-    Alert.alert("Erreur", secondError.message);
-    console.log("Erreur");
-    return [];
-  }
-  console.log(userInfos[0]);
-  return userInfos[0] || [];
+    const fetchInitialInfos = async () => {
+      const { data: users_id, error: firstError } = await supabase
+        .from("User_providers")
+        .select("user_id")
+        .eq("provider_user_id", providerUserId)
+        .single();
+
+      if (firstError) return console.error(firstError.message);
+
+      userId = users_id.user_id;
+
+      // Récupère les infos initiales
+      const { data: infos, error: secondError } = await supabase
+        .from("Users")
+        .select(
+          "email, name, surname, date_of_birth, profile_picture, level, username, xp"
+        )
+        .eq("id", userId)
+        .single();
+
+      if (secondError) return console.error(secondError.message);
+
+      setUserInfos(infos);
+
+      // Subscription Realtime
+      subscription = supabase
+        .channel(`public:Users:id=eq.${userId}`) // nouveau format v2
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "Users",
+            filter: `id=eq.${userId}`,
+          },
+          (payload) => {
+            setUserInfos(payload.new);
+          }
+        )
+        .subscribe();
+    };
+
+    fetchInitialInfos();
+
+    // Nettoyage
+    return () => {
+      if (subscription) {
+        supabase.removeChannel(subscription);
+      }
+    };
+  }, [providerUserId]);
+
+  return userInfos;
 }
 
 export async function fetchUserInfosFromUserId(userId) {

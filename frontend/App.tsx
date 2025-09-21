@@ -7,7 +7,7 @@ import * as React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import CompleteSignUpScreen from "./screens/Auth/CompleteSignUpScreen";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // Screens
 import LoginScreen from "./screens/Auth/LoginScreen";
@@ -27,6 +27,8 @@ import { ThemeContext, ThemeProvider } from "./context/ThemeContext";
 import { fetchUserId, verifyProfileCompletion } from "./functions/functions";
 import OtherProfileScreen from "./screens/OtherProfileScreen";
 import { CustomAlertProvider } from "./components/CustomAlertService";
+import ThemedText from "./components/Themed/ThemedText";
+import EventDetailScreen from "./screens/EventDetailScreen";
 
 // --- Définition des types ---
 export type RootStackParamList = {
@@ -48,10 +50,15 @@ export type FriendsStackParamList = {
   Friends: { userId: string | null };
   OtherUsers: { userId: string | null };
 };
+export type HomeStackParamList = {
+  Home: undefined;
+  EventDetail: undefined;
+};
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const FriendsStack = createNativeStackNavigator<FriendsStackParamList>();
+const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 
 // --- Stack imbriqué pour les amis ---
 function FriendsNavigator({ route }) {
@@ -70,6 +77,19 @@ function FriendsNavigator({ route }) {
         initialParams={{ userId }}
       />
     </FriendsStack.Navigator>
+  );
+}
+
+function HomeNavigator({ route }) {
+  return (
+    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
+      <HomeStack.Screen name="Home" component={HomeScreen} />
+      <HomeStack.Screen
+        name="EventDetail"
+        component={EventDetailScreen}
+        initialParams={{ item: null }}
+      />
+    </HomeStack.Navigator>
   );
 }
 
@@ -94,7 +114,7 @@ function MainTabs() {
     >
       <Tab.Screen
         name="home"
-        component={HomeScreen}
+        component={HomeNavigator}
         options={{ tabBarLabel: "Accueil" }}
       />
       <Tab.Screen
@@ -125,93 +145,75 @@ function MainTabs() {
 
 // --- App principale ---
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
   const { theme } = useContext(ThemeContext);
   const [session, setSession] = useState<Session | null>(null);
-
+  const [loading, setLoading] = useState(true);
   const [isProfileComplete, setIsProfileComplete] = useState(false);
 
   useEffect(() => {
-    let userSubscription: any;
+    let subscription: any;
 
     async function init() {
-      // Vérifier la session initiale
+      // 1. Vérifier la session initiale
       const { data } = await supabase.auth.getSession();
-      const session = data.session;
-      setSession(session);
-      setIsLoggedIn(!!session);
+      setSession(data.session);
 
-      if (session?.user?.id) {
-        const userId = session.user.id;
-
-        // Étape 1 : récupérer le profil
-        const { data: user, error } = await supabase
-          .from("User_providers")
-          .select("*")
-          .eq("provider_user_id", userId)
-          .maybeSingle();
-
-        if (error) {
-          console.error("Erreur lors de la récupération du profil:", error);
-        }
-
-        setIsProfileComplete(!!user);
-
-        // Étape 2 : abonnement Realtime sur Users
-        userSubscription = supabase
-          .from(`User_providers:provider_user_id=eq.${userId}`)
-          .on("INSERT", (payload) => {
-            const updatedUser = payload.new;
-            setIsProfileComplete(!!updatedUser);
-          })
-          .on("UPDATE", (payload) => {
-            const updatedUser = payload.new;
-            setIsProfileComplete(updatedUser);
-          })
-          .subscribe();
+      // 2. Charger profil si déjà connecté
+      if (data.session?.user?.id) {
+        await checkUserProfile(data.session.user.id);
       }
+
+      setLoading(false);
+    }
+
+    // Fonction séparée pour vérifier le profil
+    async function checkUserProfile(userId: string) {
+      const { data: user, error } = await supabase
+        .from("User_providers")
+        .select("*")
+        .eq("provider_user_id", userId)
+        .maybeSingle();
+
+      if (error) console.error("Erreur profil:", error);
+
+      setIsProfileComplete(!!user);
     }
 
     init();
 
-    // Écouter les changements de session Auth
+    // 3. Ecouter les changements d’auth
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setIsLoggedIn(!!session);
-
-        if (session?.user?.id) {
-          const userId = session.user.id;
-
-          const { data: user, error } = await supabase
-            .from("User_providers")
-            .select("*")
-            .eq("provider_user_id", userId)
-            .maybeSingle();
-
-          if (error) {
-            console.error(
-              "Erreur lors du check profil après AuthChange:",
-              error
-            );
-          }
-
-          setIsProfileComplete(user);
+      async (_event, newSession) => {
+        setSession(newSession);
+        if (newSession?.user?.id) {
+          await checkUserProfile(newSession.user.id);
+        } else {
+          setIsProfileComplete(false);
         }
       }
     );
-    console.log(session?.user.user_metadata);
+
     return () => {
       authListener.subscription.unsubscribe();
-      if (userSubscription) supabase.removeSubscription(userSubscription);
+      if (subscription) supabase.removeSubscription(subscription);
     };
   }, []);
+
+  if (loading) {
+    return (
+      <SafeAreaView
+        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+      >
+        <ThemedText type="subtitle">Chargement...</ThemedText>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <ThemeProvider>
       <CustomAlertProvider>
         <NavigationContainer>
-          {isLoggedIn && isProfileComplete ? (
+          {session && isProfileComplete ? (
             <MainTabs />
           ) : (
             <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -224,7 +226,6 @@ export default function App() {
                 name="RegisterStep2"
                 component={RegisterStep2Screen}
               />
-              <Stack.Screen name="MainTabs" component={MainTabs} />
             </Stack.Navigator>
           )}
         </NavigationContainer>

@@ -304,7 +304,8 @@ export default function FriendSearch() {
       <View style={[styles.searchBar, { backgroundColor: theme.surface }]}>
         <TextInput
           style={[styles.input, { color: theme.textprimary }]}
-          placeholder="Chercher un username..."
+          placeholder="Chercher un nom d'utilisateur..."
+          placeholderTextColor={theme.textprimary}
           value={query}
           onChangeText={setQuery}
           autoCapitalize="none"

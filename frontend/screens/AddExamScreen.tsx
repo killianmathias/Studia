@@ -6,6 +6,7 @@ import {
   Pressable,
   FlatList,
   Modal,
+  ActivityIndicator,
 } from "react-native";
 import React, { useContext, useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -40,24 +41,134 @@ const AddExamScreen = () => {
   const [currentType, setCurrentType] = useState("Cours classique");
   const [currentMastery, setCurrentMastery] = useState("moyen");
   const [level, setLevel] = useState("Collège");
+  const [examId, setExamId] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const { showAlert } = useAlert();
   const { theme } = useContext(ThemeContext);
 
+  async function savePlan(plan, examId) {
+    if (!plan) {
+      await showAlert({
+        type: "error",
+        title: "Erreur",
+        message:
+          "Une erreur est survenue ! Veuillez réessayer ultérieurement. 1",
+        buttons: [{ text: "OK", value: true }],
+      });
+      setLoading(false);
+      return;
+    }
+    if (!Array.isArray(plan)) {
+      await showAlert({
+        type: "error",
+        title: "Erreur",
+        message: "Le plan généré n'est pas valide.",
+        buttons: [{ text: "OK", value: true }],
+      });
+      setLoading(false);
+      return;
+    }
+
+    for (const session of plan) {
+      const { data: eventData, error: eventError } = await supabase
+        .from("Event")
+        .insert([
+          {
+            type: "session",
+            title: session.title, // <-- correction
+            date: session.date,
+            duration: Number(session.duration),
+            subject: subject || "", // <-- éviter la référence invalide
+          },
+        ])
+        .select();
+
+      if (eventError || !eventData || eventData.length === 0) {
+        await showAlert({
+          type: "error",
+          title: "Erreur",
+          message:
+            "Une erreur est survenue lors de la création d'un événement.",
+          buttons: [{ text: "OK", value: true }],
+        });
+        setLoading(false);
+        return;
+      }
+
+      const eventId = eventData[0].id;
+
+      const { error: sessionError } = await supabase.from("Session").insert([
+        {
+          event_id: Number(eventId),
+          exam_id: Number(examId), // <-- passé en paramètre
+          content: session.content || "",
+          finished: false,
+          duration_done: 0,
+        },
+      ]);
+
+      if (sessionError) {
+        await showAlert({
+          type: "error",
+          title: "Erreur",
+          message:
+            "Une erreur est survenue lors de la création d'une session : " +
+            sessionError.message,
+          buttons: [{ text: "OK", value: true }],
+        });
+        setLoading(false);
+        return;
+      }
+    }
+
+    await showAlert({
+      type: "success",
+      title: "Succès",
+      message: "Planning généré avec succès.",
+      buttons: [{ text: "OK", value: true }],
+    });
+    setLoading(false);
+    resetForm();
+  }
   async function generatePlan() {
     const prompt = `
 Voici la liste de mes chapitres et leurs détails :
 ${JSON.stringify(contents, null, 2)}
 
 Planifie des sessions de révision optimales avant mon examen le ${date}.
+
+⚠️ Règles de sortie :
+- Tu dois me répondre **uniquement** avec une liste d'objets JSON.
+- Pas de texte explicatif avant ou après.
+- Chaque objet doit avoir les clés suivantes :
+  {"title": "string", "date": "YYYY-MM-DD HH:mm:ss", "duration": number, "content": "string"}
+- Le résultat doit être un tableau JSON valide, rien d’autre.
   `;
 
     try {
-      const plan = await getRevisionPlan(prompt);
-      console.log("Plan généré:", plan);
-      // Tu peux l’afficher dans un state
-      // setRevisionPlan(plan);
+      const rawPlan = await getRevisionPlan(prompt);
+
+      // Vérifie et parse la chaîne JSON
+      let plan;
+      try {
+        plan = JSON.parse(rawPlan);
+      } catch (e) {
+        console.error("Réponse non-JSON :", rawPlan);
+        await showAlert({
+          type: "error",
+          title: "Erreur",
+          message: "Le plan généré est invalide. Réessaie.",
+          buttons: [{ text: "OK", value: true }],
+        });
+        setLoading(false);
+        return;
+      }
+      console.log(plan);
+      // Passe le plan parsé et l'examId
+      savePlan(plan, examId);
     } catch (err) {
+      setLoading(false);
       console.error(err);
     }
   }
@@ -71,6 +182,7 @@ Planifie des sessions de révision optimales avant mon examen le ${date}.
   }, [level]);
 
   async function addEvent() {
+    setLoading(true);
     if (
       title == "" ||
       date == null ||
@@ -84,6 +196,7 @@ Planifie des sessions de révision optimales avant mon examen le ${date}.
         message: "Veuillez compléter tous les champs !",
         buttons: [{ text: "OK", value: true }],
       });
+      setLoading(false);
       return;
     }
 
@@ -99,6 +212,7 @@ Planifie des sessions de révision optimales avant mon examen le ${date}.
         message: error.message,
         buttons: [{ text: "OK", value: true }],
       });
+      setLoading(false);
       return null;
     }
     const eventId = data[0].id;
@@ -118,10 +232,12 @@ Planifie des sessions de révision optimales avant mon examen le ${date}.
         message: error.message,
         buttons: [{ text: "OK", value: true }],
       });
+      setLoading(false);
       return null;
     }
 
     const examId = data[0].id;
+    setExamId(examId);
 
     // insérer les contenus liés
     if (contents.length > 0) {
@@ -139,17 +255,11 @@ Planifie des sessions de révision optimales avant mon examen le ${date}.
           message: "Erreur lors de l'ajout de chapitre." + error.message,
           buttons: [{ text: "OK", value: true }],
         });
+        setLoading(false);
       }
     }
 
-    await showAlert({
-      type: "success",
-      title: "Succès",
-      message: "Examen ajouté avec succès.",
-      buttons: [{ text: "OK", value: true }],
-    });
     generatePlan();
-    resetForm();
   }
 
   function resetForm() {
@@ -283,9 +393,15 @@ Planifie des sessions de révision optimales avant mon examen le ${date}.
             );
           }}
         />
-        <View style={styles.addButtonContainer}>
-          <CustomButton title={"Ajouter l'examen"} onPress={addEvent} />
-        </View>
+        {loading ? (
+          <View>
+            <ActivityIndicator />
+          </View>
+        ) : (
+          <View style={styles.addButtonContainer}>
+            <CustomButton title={"Ajouter l'examen"} onPress={addEvent} />
+          </View>
+        )}
 
         <Modal visible={modalVisible} animationType="slide" transparent>
           <View style={styles.modalContainer}>

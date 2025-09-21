@@ -35,7 +35,24 @@ const LoginScreen = () => {
       password: password,
     });
 
-    if (error) Alert.alert(error.message);
+    if (error) {
+      if (error.message === "Invalid login credentials") {
+        await showAlert({
+          type: "error",
+          title: "Erreur",
+          message: "Identifiants incorrects !",
+          buttons: [{ text: "OK", value: true }],
+        });
+        return;
+      } else {
+        await showAlert({
+          type: "error",
+          title: "Erreur",
+          message: "Une erreur est survenue :" + error.message,
+          buttons: [{ text: "OK", value: true }],
+        });
+      }
+    }
     setLoading(false);
   }
   const navigation = useNavigation();

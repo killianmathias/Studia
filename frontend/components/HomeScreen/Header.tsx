@@ -14,7 +14,11 @@ import { supabase } from "../../lib/supabase";
 import { ThemeContext } from "../../context/ThemeContext";
 import { useNavigation } from "@react-navigation/native";
 import XPProgressCircle from "./XPProgresseCircle";
-import { fetchUserId, fetchUserInfos } from "../../functions/functions";
+import {
+  fetchUserId,
+  fetchUserInfos,
+  useUserInfos,
+} from "../../functions/functions";
 
 const { width, height } = Dimensions.get("window");
 
@@ -63,11 +67,6 @@ async function fetchAuthUser() {
 // }
 
 const Header = () => {
-  const [user, setUser] = useState({
-    surname: "",
-    profile_picture: "",
-    name: "",
-  });
   const [userId, setUserId] = useState(null);
   const { theme, mode } = useContext(ThemeContext);
   const navigation = useNavigation();
@@ -81,38 +80,33 @@ const Header = () => {
 
     loadUserId();
   }, []);
-  useEffect(() => {
-    const loadUser = async () => {
-      const tempUser = await fetchUserInfos(userId);
-
-      setUser({
-        surname: tempUser.surname,
-        name: tempUser.name,
-        profile_picture: tempUser.profile_picture,
-      });
-    };
-    loadUser();
-  }, [userId]);
+  const user = useUserInfos(userId);
 
   return (
     <View style={[styles.header, { backgroundColor: theme.surface }]}>
-      <ThemedText style={styles.text} type="subtitle">
-        Bienvenue {user?.surname}
-      </ThemedText>
-      <View style={styles.profilePicture}>
-        <TouchableOpacity onPress={() => navigation.navigate("profile")}>
-          {!userId ? (
-            <ActivityIndicator />
-          ) : (
-            <XPProgressCircle
-              imageUri={user.profile_picture}
-              size={50}
-              strokeWidth={5}
-              uid={userId}
-            />
-          )}
-        </TouchableOpacity>
-      </View>
+      {user ? (
+        <>
+          <ThemedText style={styles.text} type="subtitle">
+            Bienvenue {user?.surname}
+          </ThemedText>
+          <View style={styles.profilePicture}>
+            <TouchableOpacity onPress={() => navigation.navigate("profile")}>
+              {!userId ? (
+                <ActivityIndicator />
+              ) : (
+                <XPProgressCircle
+                  imageUri={user.profile_picture}
+                  size={50}
+                  strokeWidth={5}
+                  uid={userId}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+        </>
+      ) : (
+        <></>
+      )}
     </View>
   );
 };
