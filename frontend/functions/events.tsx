@@ -2,84 +2,96 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { fetchUserId } from "./functions";
 import { Alert } from "react-native";
+import { useAppStore } from "../store/useAppStore";
+import { CalendarEvent, SupabaseEvent } from "../types/types";
+import { getProvider } from "./auth";
+// import { GoogleSignin } from "@react-native-google-signin/google-signin";
 
-export type SupabaseEvent = {
-  id: string;
-  title: string;
-  user_id: string;
-  created_at: string;
-  // ajoute ici les autres champs de ta table Event
-};
-
-export function useEvents() {
-  const [events, setEvents] = useState<SupabaseEvent[]>([]);
-  const [loading, setLoading] = useState(true);
+function toCalendarEvent(event: SupabaseEvent): CalendarEvent {
+  const start = new Date(event.date);
+  const end = new Date(start.getTime() + event.duration * 60 * 1000);
+  return { id: event.id, title: event.title, start, end, type: event.type }; // conserve l'id
+}
+export function useStudiaEvents() {
+  const setStudiaEvents = useAppStore((state) => state.setStudiaEvents);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    let channel: any;
-
-    async function loadEvents() {
-      const userId = await fetchUserId();
-      if (!userId) {
-        setEvents([]);
+    const getUser = async () => {
+      const id = await fetchUserId();
+      if (!id) {
+        console.error("Erreur : manque userID");
         return;
       }
+      setUserId(id);
+    };
 
-      // 1. Charger les events existants
+    getUser();
+  }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchEvents = async () => {
       const { data, error } = await supabase
         .from("Event")
         .select("*")
         .eq("user_id", userId);
 
       if (error) {
-        Alert.alert("Erreur", error.message);
-      } else {
-        setEvents(data || []);
+        console.error("Erreur lors de la récupération des events :", error);
+        return;
       }
 
-      // 2. Ecouter les changements en temps réel
-      channel = supabase
-        .channel("events-changes")
-        .on(
-          "postgres_changes",
-          {
-            event: "*", // INSERT | UPDATE | DELETE
-            schema: "public",
-            table: "Event",
-            filter: `user_id=eq.${userId}`, // 👈 important pour écouter que les events de l'utilisateur
-          },
-          (payload) => {
-            console.log("Changement Event:", payload);
-
-            if (payload.eventType === "INSERT") {
-              setEvents((prev) => [payload.new as SupabaseEvent, ...prev]);
-              console.log("Événement ajouté !");
-            }
-            if (payload.eventType === "UPDATE") {
-              setEvents((prev) =>
-                prev.map((e) =>
-                  e.id === payload.new.id ? (payload.new as SupabaseEvent) : e
-                )
-              );
-              console.log("Événement modifié !");
-            }
-            if (payload.eventType === "DELETE") {
-              setEvents((prev) => prev.filter((e) => e.id !== payload.old.id));
-              console.log("Événement supprimé !");
-            }
-          }
-        )
-        .subscribe();
-
-      setLoading(false);
-    }
-
-    loadEvents();
-
-    return () => {
-      if (channel) supabase.removeChannel(channel);
+      setStudiaEvents((data ?? []).map(toCalendarEvent));
     };
-  }, []);
 
-  return { events, loading };
+    // 1. Récupération initiale
+    fetchEvents();
+
+    // 2. Abonnement en temps réel
+    const channel = supabase
+      .channel("events-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "Event",
+          filter: `user_id=eq.${userId}`,
+        },
+        async () => {
+          await fetchEvents();
+        }
+      )
+      .subscribe();
+
+    // 3. Cleanup
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, setStudiaEvents]);
+}
+export async function fetchGoogleEvents() {
+  const setGoogleEvents = useAppStore((s) => s.setGoogleEvents);
+  const providers = await getProvider();
+  // if (providers.includes("google")) {
+  //   const { accessToken } = await GoogleSignin.getTokens();
+  //   const res = await fetch(
+  //     "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+  //     {
+  //       headers: { Authorization: `Bearer ${accessToken}` },
+  //     }
+  //   );
+  //   const data = await res.json();
+  //   if (data.items?.length) {
+  //     const googleEvents = data.items.map((item: any) => ({
+  //       title: item.summary || "Sans titre",
+  //       start: new Date(item.start?.dateTime || item.start?.date),
+  //       end: new Date(item.end?.dateTime || item.end?.date),
+  //     }));
+  //     setGoogleEvents(googleEvents);
+  //   }
+  // }
+  return [];
 }

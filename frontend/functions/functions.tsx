@@ -2,33 +2,6 @@ import { supabase } from "../lib/supabase";
 import { SupabaseEvent, CalendarEvent } from "../types/types";
 import { Alert } from "react-native";
 import { useState, useEffect } from "react";
-export async function fetchUserId() {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error) {
-    console.error("Erreur récupération utilisateur :", error.message);
-    return null;
-  }
-  return user.id;
-}
-
-export async function fetchEvents(): Promise<SupabaseEvent[]> {
-  const userId = await fetchUserId();
-  if (!userId) return [];
-
-  const { data: events, error } = await supabase
-    .from("Event")
-    .select("*")
-    .eq("user_id", userId);
-
-  if (error) {
-    Alert.alert("Erreur", error.message);
-    return [];
-  }
-  return events || [];
-}
 
 export function getXpForLevel(level: number): number {
   return 100 * level * level;

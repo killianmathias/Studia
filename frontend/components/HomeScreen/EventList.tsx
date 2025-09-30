@@ -12,40 +12,47 @@ import { ThemeContext } from "../../context/ThemeContext";
 import ThemedText from "../Themed/ThemedText";
 import { fetchEvents } from "../../functions/functions";
 const { width, height } = Dimensions.get("window");
-import { Section } from "../../types/types";
+import { CalendarEvent, Section } from "../../types/types";
 import { SupabaseEvent } from "../../types/types";
 import CustomButton from "../CustomButton";
 import { useNavigation } from "@react-navigation/native";
-import { useEvents } from "../../functions/events";
+import { useAppStore } from "../../store/useAppStore";
+import { fetchGoogleEvents, useStudiaEvents } from "../../functions/events";
 
-const formatDate = (isoDate: string) => {
-  const date = new Date(isoDate);
-  return date.toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "long",
+const formatDate = (date: Date): string => {
+  let str = date.toLocaleDateString("fr-FR", {
+    weekday: "long",
     year: "numeric",
+    day: "numeric",
+    month: "long",
   });
+  return str.charAt(0).toLocaleUpperCase() + str.slice(1);
 };
 
-const groupEventsByDay = (events: SupabaseEvent[]): Section[] => {
-  const grouped: Record<string, SupabaseEvent[]> = {};
+type Section = {
+  title: string;
+  data: CalendarEvent[];
+};
+
+const groupEventsByDay = (events: CalendarEvent[]): Section[] => {
+  const grouped: Record<string, CalendarEvent[]> = {};
 
   events.forEach((event) => {
-    const day = event.date.split("T")[0];
-    if (!grouped[day]) grouped[day] = [];
-    grouped[day].push(event);
+    // event.start est un Date
+    const key = event.start.toISOString(); // "YYYY-MM-DD"
+    const dayKey = key.split("T")[0];
+    if (!grouped[dayKey]) grouped[dayKey] = [];
+    grouped[dayKey].push(event);
   });
 
   Object.keys(grouped).forEach((day) => {
-    grouped[day].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
+    grouped[day].sort((a, b) => a.start.getTime() - b.start.getTime());
   });
 
   return Object.keys(grouped)
     .sort()
     .map((day) => ({
-      title: formatDate(grouped[day][0].date),
+      title: formatDate(grouped[day][0].start),
       data: grouped[day],
     }));
 };
@@ -53,7 +60,10 @@ const groupEventsByDay = (events: SupabaseEvent[]): Section[] => {
 const EventList = () => {
   const { theme } = useContext(ThemeContext);
   const navigation = useNavigation();
-  const { events, loading } = useEvents();
+  useStudiaEvents();
+  const events = useAppStore((s) => s.studiaEvents);
+
+  console.log(events);
 
   const sections = groupEventsByDay(events);
   const renderItem = ({ item }: { item: Event }) => (
@@ -62,7 +72,7 @@ const EventList = () => {
       onPress={() => navigation.navigate("EventDetail", { item: item })}
     >
       <Text style={[styles.time, { color: theme.textprimary }]}>
-        {item.date.split("T")[1].slice(0, 5)}
+        {item.start.toISOString().split("T")[1].slice(0, 5)}
       </Text>
       <Text style={[styles.title, { color: theme.textprimary }]}>
         {item.title}
@@ -126,7 +136,7 @@ const styles = StyleSheet.create({
     height: 0.7 * height,
   },
   titleContainer: {
-    height: 0.05 * height,
+    height: 0.04 * height,
     marginTop: height * 0.02,
     marginLeft: width * 0.05,
   },
@@ -141,6 +151,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingLeft: 20,
     height: 0.06 * height,
+    backgroundColor: "red",
     width: width * 0.9,
     marginLeft: width * 0.05,
     borderRadius: 15,
@@ -149,7 +160,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
     alignItems: "center",
-    marginTop: height * 0.02,
+    marginTop: height * 0.0,
+    marginBottom: height * 0.01,
   },
   time: {
     marginRight: 10,

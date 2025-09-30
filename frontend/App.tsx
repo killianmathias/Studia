@@ -29,6 +29,7 @@ import OtherProfileScreen from "./screens/OtherProfileScreen";
 import { CustomAlertProvider } from "./components/CustomAlertService";
 import ThemedText from "./components/Themed/ThemedText";
 import EventDetailScreen from "./screens/EventDetailScreen";
+import { useAppStore } from "./store/useAppStore";
 
 // --- Définition des types ---
 export type RootStackParamList = {
@@ -147,12 +148,14 @@ function MainTabs() {
 export default function App() {
   const { theme } = useContext(ThemeContext);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
   const [isProfileComplete, setIsProfileComplete] = useState(false);
+  const loading = useAppStore((s) => s.loading);
+  const load = useAppStore((s) => s.load);
+  const stopLoad = useAppStore((s) => s.stopLoad);
 
   useEffect(() => {
     let subscription: any;
-
+    load();
     async function init() {
       // 1. Vérifier la session initiale
       const { data } = await supabase.auth.getSession();
@@ -162,8 +165,7 @@ export default function App() {
       if (data.session?.user?.id) {
         await checkUserProfile(data.session.user.id);
       }
-
-      setLoading(false);
+      stopLoad();
     }
 
     // Fonction séparée pour vérifier le profil

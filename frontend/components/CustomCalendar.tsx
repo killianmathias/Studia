@@ -18,13 +18,13 @@ import dayjs from "dayjs";
 import "dayjs/locale/fr";
 import * as Haptics from "expo-haptics";
 import { ThemeContext } from "../context/ThemeContext";
-import { supabase } from "../lib/supabase";
-import { fetchUserId, fetchEvents } from "../functions/functions";
-import { CalendarEvent, SupabaseEvent } from "../types/types";
-import { getProvider } from "../functions/auth";
-import * as SecureStore from "expo-secure-store";
-// import { GoogleSignin } from "@react-native-google-signin/google-signin";
-
+import { useAppStore } from "../store/useAppStore";
+import {
+  fetchGoogleEvents,
+  initStudiaEvents,
+  useStudiaEvents,
+} from "../functions/events";
+//
 const { width, height } = Dimensions.get("window");
 const BUTTONS = ["day", "week", "month"];
 
@@ -36,41 +36,10 @@ const CustomCalendar = () => {
   const now = new Date();
   const scrollToHour = now.getHours() + now.getMinutes() / 60;
   const sliderX = useSharedValue(width / 3);
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-
+  const events = useAppStore((s) => s.events);
+  useStudiaEvents();
   useEffect(() => {
-    const loadAllEvents = async () => {
-      const supabaseEvents = await fetchEvents();
-      const formattedEvents: CalendarEvent[] = supabaseEvents.map((e) => ({
-        title: e.title,
-        start: new Date(e.date),
-        end: new Date(new Date(e.date).getTime() + e.duration * 60 * 1000),
-      }));
-
-      setEvents(formattedEvents);
-
-      const providers = await getProvider();
-      // if (providers.includes("google")) {
-      //   const { accessToken } = await GoogleSignin.getTokens();
-      //   const res = await fetch(
-      //     "https://www.googleapis.com/calendar/v3/calendars/primary/events",
-      //     {
-      //       headers: { Authorization: `Bearer ${accessToken}` },
-      //     }
-      //   );
-      //   const data = await res.json();
-      //   if (data.items?.length) {
-      //     const googleEvents = data.items.map((item) => ({
-      //       title: item.summary || "Sans titre",
-      //       start: new Date(item.start?.dateTime || item.start?.date),
-      //       end: new Date(item.end?.dateTime || item.end?.date),
-      //     }));
-      //     setEvents((prev) => [...prev, ...googleEvents]);
-      //   }
-      // }
-    };
-
-    loadAllEvents();
+    fetchGoogleEvents();
   }, []);
   useEffect(() => {
     const str = dayjs(currentDate)
