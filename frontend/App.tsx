@@ -24,7 +24,8 @@ import TabBar from "./components/TabBar";
 
 // Context & utils
 import { ThemeContext, ThemeProvider } from "./context/ThemeContext";
-import { fetchUserId, verifyProfileCompletion } from "./functions/functions";
+import { verifyProfileCompletion } from "./functions/functions";
+import { fetchUserId } from "./functions/user";
 import OtherProfileScreen from "./screens/OtherProfileScreen";
 import { CustomAlertProvider } from "./components/CustomAlertService";
 import ThemedText from "./components/Themed/ThemedText";

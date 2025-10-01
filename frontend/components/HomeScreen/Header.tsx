@@ -14,12 +14,8 @@ import { supabase } from "../../lib/supabase";
 import { ThemeContext } from "../../context/ThemeContext";
 import { useNavigation } from "@react-navigation/native";
 import XPProgressCircle from "./XPProgresseCircle";
-import {
-  fetchUserId,
-  fetchUserInfos,
-  useUserInfos,
-} from "../../functions/functions";
-
+import { fetchUserInfos, useUserInfos } from "../../functions/functions";
+import { fetchUserId } from "../../functions/user";
 const { width, height } = Dimensions.get("window");
 
 // 1️⃣ Récupérer l'utilisateur Supabase Auth

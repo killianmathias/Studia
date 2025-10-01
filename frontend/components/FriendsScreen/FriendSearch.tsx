@@ -13,7 +13,7 @@ import {
   Dimensions,
 } from "react-native";
 import { supabase } from "../../lib/supabase";
-import { fetchUserId } from "../../functions/functions";
+import { fetchUserId } from "../../functions/user";
 import { Ionicons } from "@expo/vector-icons";
 import { ThemeContext } from "../../context/ThemeContext";
 import { useAlert } from "../CustomAlertService";

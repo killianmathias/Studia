@@ -17,7 +17,7 @@ import Checkbox from "expo-checkbox";
 import { ThemeContext } from "../../../context/ThemeContext";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import LoadImageButton from "../../../components/ProfileScreen/LoadImageButton";
-import { fetchUserId } from "../../../functions/functions";
+import { fetchUserId } from "../../../functions/user";
 
 const { width, height } = Dimensions.get("window");
 

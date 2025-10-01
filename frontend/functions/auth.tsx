@@ -1,5 +1,5 @@
 import { supabase } from "../lib/supabase";
-import { fetchUserId } from "./functions";
+import { fetchUserId } from "./user";
 // export const getGoogleAccessToken = async () => {
 //   const { data, error } = await supabase.auth.getSession();
 //   if (error) {

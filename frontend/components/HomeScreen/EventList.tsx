@@ -38,8 +38,7 @@ const groupEventsByDay = (events: CalendarEvent[]): Section[] => {
   const grouped: Record<string, CalendarEvent[]> = {};
 
   events.forEach((event) => {
-    // event.start est un Date
-    const key = event.start.toISOString(); // "YYYY-MM-DD"
+    const key = event.start.toISOString();
     const dayKey = key.split("T")[0];
     if (!grouped[dayKey]) grouped[dayKey] = [];
     grouped[dayKey].push(event);
@@ -62,8 +61,6 @@ const EventList = () => {
   const navigation = useNavigation();
   useStudiaEvents();
   const events = useAppStore((s) => s.studiaEvents);
-
-  console.log(events);
 
   const sections = groupEventsByDay(events);
   const renderItem = ({ item }: { item: Event }) => (

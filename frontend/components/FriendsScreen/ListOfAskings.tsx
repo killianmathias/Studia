@@ -18,7 +18,7 @@ import {
 } from "../../functions/functions";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { fetchUserId } from "../../functions/functions";
+import { fetchUserId } from "../../functions/user";
 import { useAlert } from "../CustomAlertService";
 
 const { height, width } = Dimensions.get("window");

@@ -2,6 +2,7 @@ import { supabase } from "../lib/supabase";
 import { SupabaseEvent, CalendarEvent } from "../types/types";
 import { Alert } from "react-native";
 import { useState, useEffect } from "react";
+import { fetchUserId } from "./user";
 
 export function getXpForLevel(level: number): number {
   return 100 * level * level;

@@ -19,13 +19,8 @@ import ThemeButton from "../components/ProfileScreen/ThemeButton";
 import ThemeSelector from "../components/ProfileScreen/ThemeSelector";
 import LogoutButton from "../components/ProfileScreen/LogoutButton";
 import Input from "../components/Input";
-import {
-  fetchUserId,
-  fetchUserInfos,
-  fetchUserInfosWithAuthId,
-  fetchUserInfosWithUserId,
-  useUserInfos,
-} from "../functions/functions";
+import { useUserInfos } from "../functions/functions";
+import { fetchUserId } from "../functions/user";
 import CustomDatePicker from "../components/CustomDatePicker";
 import LevelPicker from "../components/LevelPicker";
 import XPProgressCircle from "../components/HomeScreen/XPProgresseCircle";

@@ -10,7 +10,7 @@ export async function getRevisionPlan(prompt: string) {
         Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini", // ou "gpt-4o", "gpt-3.5-turbo", etc.
+        model: "gpt-5-nano", // ou "gpt-4o", "gpt-3.5-turbo", etc.
         messages: [
           {
             role: "system",
@@ -18,7 +18,6 @@ export async function getRevisionPlan(prompt: string) {
           },
           { role: "user", content: prompt },
         ],
-        temperature: 0.7,
       }),
     });
 

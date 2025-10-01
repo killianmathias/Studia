@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { fetchUserId } from "./functions";
+import { fetchUserId } from "./user";
 import { Alert } from "react-native";
 import { useAppStore } from "../store/useAppStore";
 import { CalendarEvent, SupabaseEvent } from "../types/types";

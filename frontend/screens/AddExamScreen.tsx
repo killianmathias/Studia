@@ -26,6 +26,8 @@ import { ThemeContext } from "../context/ThemeContext";
 import { useAlert } from "../components/CustomAlertService";
 import { supabase } from "../lib/supabase";
 import { getRevisionPlan } from "../lib/openai";
+import { useAppStore } from "../store/useAppStore";
+import { useStudiaEvents } from "../functions/events";
 const { height, width } = Dimensions.get("window");
 
 const AddExamScreen = () => {
@@ -43,6 +45,15 @@ const AddExamScreen = () => {
   const [level, setLevel] = useState("Collège");
   const [examId, setExamId] = useState("");
   const [loading, setLoading] = useState(false);
+  const events = useAppStore((s) => s.events);
+
+  useStudiaEvents();
+  useEffect(() => {
+    async function fetchGoogleEvents() {
+      await fetchGoogleEvents();
+    }
+    fetchGoogleEvents();
+  }, [events]);
 
   const { showAlert } = useAlert();
   const { theme } = useContext(ThemeContext);
@@ -133,10 +144,14 @@ const AddExamScreen = () => {
   }
   async function generatePlan() {
     const prompt = `
+    Nous sommes aujourd'hui le ${Date.now().toString()}.
+
+    Voici la liste de mes événements déjà planifiés:
+    ${JSON.stringify(events, null, 2)}.
 Voici la liste de mes chapitres et leurs détails :
 ${JSON.stringify(contents, null, 2)}
 
-Planifie des sessions de révision optimales avant mon examen le ${date}.
+Planifie des sessions de révision optimales avant mon examen le ${date} tout en les plaçant dans mon temps libre.
 
 ⚠️ Règles de sortie :
 - Tu dois me répondre **uniquement** avec une liste d'objets JSON.
@@ -180,7 +195,6 @@ Planifie des sessions de révision optimales avant mon examen le ${date}.
     }
     fetchUserLevel();
   }, [level]);
-
   async function addEvent() {
     setLoading(true);
     if (
@@ -202,7 +216,15 @@ Planifie des sessions de révision optimales avant mon examen le ${date}.
 
     const { data, error } = await supabase
       .from("Event")
-      .insert([{ type: "exam", title, date, duration, subject }])
+      .insert([
+        {
+          type: "exam",
+          title,
+          date: new Date(date).toISOString(),
+          duration,
+          subject,
+        },
+      ])
       .select();
 
     if (error) {
@@ -405,7 +427,12 @@ Planifie des sessions de révision optimales avant mon examen le ${date}.
 
         <Modal visible={modalVisible} animationType="slide" transparent>
           <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
+            <View
+              style={[
+                styles.modalContent,
+                { backgroundColor: theme.background },
+              ]}
+            >
               <Input
                 placeholder="Titre du chapitre"
                 value={chapterTitle}
