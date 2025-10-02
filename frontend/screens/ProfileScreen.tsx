@@ -62,6 +62,7 @@ export default function ProfileScreen() {
   const { showAlert } = useAlert();
 
   const { userId } = route.params;
+
   const openModal = () => {
     setModalVisible(true);
   };
@@ -71,30 +72,37 @@ export default function ProfileScreen() {
   useEffect(() => {
     setLoading(true);
     async function fetchUser() {
-      console.log(userId);
-      const data = useUserInfos(userId);
-      console.log(data);
-      if (data) {
-        setName(data.name);
-        setSurname(data.surname);
-        setBirthday(new Date(data.date_of_birth));
-        setEmail(data.email);
-        setLevel(data.level);
-        setProfilePicture(data.profile_picture);
-        setUsername(data.username);
+      const userInfos = useUserInfos(userId);
+      console.log("UserInfos", userInfos);
+      if (userInfos) {
+        setName(userInfos.name);
+        setSurname(userInfos.surname);
+        setBirthday(new Date(userInfos.date_of_birth));
+        setEmail(userInfos.email);
+        setLevel(userInfos.level);
+        setProfilePicture(userInfos.profile_picture);
+        setUsername(userInfos.username);
+      } else {
+        await showAlert({
+          type: "error",
+          title: "Erreur",
+          message: "Impossible de récupérer vos informations",
+          buttons: [{ text: "OK", value: true }],
+        });
       }
-    }
-    async function fetchVisitorId() {
-      const id = await fetchUserId();
-      setVisitorId(id);
     }
     async function fetchIsConnected() {
       const { data, error } = await supabase
         .from("User_providers")
         .select("provider")
-        .eq("provider_user_id", visitorId);
+        .eq("provider_user_id", userId);
       if (error) {
-        Alert.alert("Une erreur est survenue");
+        await showAlert({
+          type: "error",
+          title: "Erreur",
+          message: "Impossible de trouver les différents providers.",
+          buttons: [{ text: "OK", value: true }],
+        });
         return;
       }
       for (const provider in data) {
@@ -106,10 +114,7 @@ export default function ProfileScreen() {
       }
     }
     fetchUser();
-    fetchVisitorId();
-    if (visitorId === userId) {
-      fetchIsConnected();
-    }
+    fetchIsConnected();
     setLoading(false);
   }, []);
 

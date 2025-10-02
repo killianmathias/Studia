@@ -90,58 +90,66 @@ export function useUserInfos(providerUserId) {
   useEffect(() => {
     if (!providerUserId) return;
 
-    let userId;
     let subscription;
 
     const fetchInitialInfos = async () => {
-      const { data: users_id, error: firstError } = await supabase
-        .from("User_providers")
-        .select("user_id")
-        .eq("provider_user_id", providerUserId)
-        .single();
+      try {
+        // 1. Récupérer userId
+        const { data: userRecord, error: firstError } = await supabase
+          .from("User_providers")
+          .select("user_id")
+          .eq("provider_user_id", providerUserId)
+          .single();
 
-      if (firstError) return console.error(firstError.message);
+        if (firstError) {
+          console.error("Erreur User_providers:", firstError.message);
+          return;
+        }
+        console.log(userRecord);
 
-      userId = users_id.user_id;
+        const userId = userRecord.user_id;
 
-      // Récupère les infos initiales
-      const { data: infos, error: secondError } = await supabase
-        .from("Users")
-        .select(
-          "email, name, surname, date_of_birth, profile_picture, level, username, xp"
-        )
-        .eq("id", userId)
-        .single();
+        // 2. Récupérer infos utilisateur
+        const { data: infos, error: secondError } = await supabase
+          .from("Users")
+          .select(
+            "email, name, surname, date_of_birth, profile_picture, level, username, xp"
+          )
+          .eq("id", userId)
+          .single();
 
-      if (secondError) return console.error(secondError.message);
+        if (secondError) {
+          console.error("Erreur Users:", secondError.message);
+          return;
+        }
 
-      setUserInfos(infos);
+        setUserInfos(infos);
 
-      // Subscription Realtime
-      subscription = supabase
-        .channel(`public:Users:id=eq.${userId}`) // nouveau format v2
-        .on(
-          "postgres_changes",
-          {
-            event: "UPDATE",
-            schema: "public",
-            table: "Users",
-            filter: `id=eq.${userId}`,
-          },
-          (payload) => {
-            setUserInfos(payload.new);
-          }
-        )
-        .subscribe();
+        // 3. Subscription Realtime
+        subscription = supabase
+          .channel(`public:Users:id=eq.${userId}`)
+          .on(
+            "postgres_changes",
+            {
+              event: "UPDATE",
+              schema: "public",
+              table: "Users",
+              filter: `id=eq.${userId}`,
+            },
+            (payload) => {
+              setUserInfos(payload.new);
+            }
+          )
+          .subscribe();
+      } catch (err) {
+        console.error("Erreur useUserInfos:", err);
+      }
     };
 
     fetchInitialInfos();
 
-    // Nettoyage
     return () => {
-      if (subscription) {
-        supabase.removeChannel(subscription);
-      }
+      if (subscription) supabase.removeChannel(subscription);
     };
   }, [providerUserId]);
 

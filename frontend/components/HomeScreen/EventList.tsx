@@ -68,12 +68,19 @@ const EventList = () => {
       style={[styles.item, { backgroundColor: theme.surface }]}
       onPress={() => navigation.navigate("EventDetail", { item: item })}
     >
-      <Text style={[styles.time, { color: theme.textprimary }]}>
-        {item.start.toISOString().split("T")[1].slice(0, 5)}
-      </Text>
-      <Text style={[styles.title, { color: theme.textprimary }]}>
-        {item.title}
-      </Text>
+      <View style={styles.itemTimeContainer}>
+        <Text style={[styles.time, { color: theme.textprimary }]}>
+          {item.start.toLocaleTimeString("fr-FR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </Text>
+      </View>
+      <View style={styles.itemTitleContainer}>
+        <Text style={[styles.title, { color: theme.textprimary }]}>
+          {item.title.length > 20 ? item.title.slice(0, 50) + "…" : item.title}
+        </Text>
+      </View>
       <View
         style={[
           styles.indicator,
@@ -146,7 +153,6 @@ const styles = StyleSheet.create({
   },
   item: {
     flexDirection: "row",
-    paddingLeft: 20,
     height: 0.06 * height,
     backgroundColor: "red",
     width: width * 0.9,
@@ -157,13 +163,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
     alignItems: "center",
+    justifyContent: "space-between",
     marginTop: height * 0.0,
     marginBottom: height * 0.01,
   },
   time: {
     marginRight: 10,
-    width: 60,
     fontWeight: "bold",
+    marginLeft: "15%",
   },
   title: {
     fontSize: 18,
@@ -184,4 +191,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   noEventText: {},
+  itemTitleContainer: {
+    width: "70%",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  itemTimeContainer: {
+    width: "20%",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100%",
+  },
 });
