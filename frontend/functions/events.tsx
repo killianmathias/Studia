@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { fetchUserId } from "./user";
 import { Alert } from "react-native";
-import { useAppStore } from "../store/useAppStore";
+import { useEventStore } from "../store/useEventStore";
 import { CalendarEvent, SupabaseEvent } from "../types/types";
 import { getProvider } from "./auth";
 // import { GoogleSignin } from "@react-native-google-signin/google-signin";
@@ -13,7 +13,7 @@ function toCalendarEvent(event: SupabaseEvent): CalendarEvent {
   return { id: event.id, title: event.title, start, end, type: event.type }; // conserve l'id
 }
 export function useStudiaEvents() {
-  const setStudiaEvents = useAppStore((state) => state.setStudiaEvents);
+  const setStudiaEvents = useEventStore((state) => state.setStudiaEvents);
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -73,7 +73,7 @@ export function useStudiaEvents() {
   }, [userId, setStudiaEvents]);
 }
 export async function fetchGoogleEvents() {
-  const setGoogleEvents = useAppStore((s) => s.setGoogleEvents);
+  const setGoogleEvents = useEventStore((s) => s.setGoogleEvents);
   const providers = await getProvider();
   // if (providers.includes("google")) {
   //   const { accessToken } = await GoogleSignin.getTokens();

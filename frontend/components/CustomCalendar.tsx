@@ -18,7 +18,7 @@ import dayjs from "dayjs";
 import "dayjs/locale/fr";
 import * as Haptics from "expo-haptics";
 import { ThemeContext } from "../context/ThemeContext";
-import { useAppStore } from "../store/useAppStore";
+import { useEventStore } from "../store/useEventStore";
 import {
   fetchGoogleEvents,
   initStudiaEvents,
@@ -36,7 +36,7 @@ const CustomCalendar = () => {
   const now = new Date();
   const scrollToHour = now.getHours() + now.getMinutes() / 60;
   const sliderX = useSharedValue(width / 3);
-  const events = useAppStore((s) => s.events);
+  const events = useEventStore((s) => s.allEvents);
   useStudiaEvents();
   useEffect(() => {
     fetchGoogleEvents();

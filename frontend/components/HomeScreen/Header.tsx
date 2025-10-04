@@ -2,11 +2,11 @@ import {
   Dimensions,
   StyleSheet,
   View,
-  Image,
   Text,
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
+
 import React, { useEffect, useState, useContext } from "react";
 import ThemedText from "../Themed/ThemedText";
 import ThemedSafeAreaView from "../Themed/ThemedSafeAreaView";
@@ -14,87 +14,32 @@ import { supabase } from "../../lib/supabase";
 import { ThemeContext } from "../../context/ThemeContext";
 import { useNavigation } from "@react-navigation/native";
 import XPProgressCircle from "./XPProgresseCircle";
-import { fetchUserInfos, useUserInfos } from "../../functions/functions";
-import { fetchUserId } from "../../functions/user";
+import { useAuthStore } from "../../store/useAuthStore";
+
 const { width, height } = Dimensions.get("window");
 
-// 1️⃣ Récupérer l'utilisateur Supabase Auth
-async function fetchAuthUser() {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-  if (error || !user) {
-    console.error("Erreur récupération utilisateur :", error?.message);
-    return null;
-  }
-  return user;
-}
-
-// // 2️⃣ Mapper vers users.id via user_providers
-// async function fetchUser() {
-//   const authUser = await fetchAuthUser();
-//   if (!authUser) return null;
-
-//   const { data: providerData, error: providerError } = await supabase
-//     .from("User_providers")
-//     .select("user_id")
-//     .eq("provider_user_id", authUser.id)
-//     .maybeSingle();
-
-//   if (providerError || !providerData) {
-//     console.error("Erreur mapping user_providers :", providerError?.message);
-//     return null;
-//   }
-
-//   const userId = providerData.user_id;
-
-//   const { data: user, error: userError } = await supabase
-//     .from("Users")
-//     .select("*")
-//     .eq("id", userId)
-//     .maybeSingle();
-
-//   if (userError) {
-//     console.error("Erreur récupération user :", userError.message);
-//     return null;
-//   }
-//   return user;
-// }
-
 const Header = () => {
-  const [userId, setUserId] = useState(null);
   const { theme, mode } = useContext(ThemeContext);
   const navigation = useNavigation();
-
-  // Charger les données utilisateur
-  useEffect(() => {
-    const loadUserId = async () => {
-      const uid = await fetchUserId();
-      setUserId(uid);
-    };
-
-    loadUserId();
-  }, []);
-  const user = useUserInfos(userId);
+  const profile = useAuthStore((s) => s.profile);
+  const user = useAuthStore((s) => s.user);
 
   return (
     <View style={[styles.header, { backgroundColor: theme.surface }]}>
-      {user ? (
+      {profile ? (
         <>
           <ThemedText style={styles.text} type="subtitle">
-            Bienvenue {user?.surname}
+            Bienvenue {profile?.surname}
           </ThemedText>
           <View style={styles.profilePicture}>
             <TouchableOpacity onPress={() => navigation.navigate("profile")}>
-              {!userId ? (
+              {user?.aud != "authenticated" ? (
                 <ActivityIndicator />
               ) : (
                 <XPProgressCircle
-                  imageUri={user.profile_picture}
+                  imageUri={profile.profile_picture}
                   size={50}
                   strokeWidth={5}
-                  uid={userId}
                 />
               )}
             </TouchableOpacity>

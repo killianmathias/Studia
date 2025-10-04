@@ -4,7 +4,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import ThemedSafeAreaView from "../components/Themed/ThemedSafeAreaView";
 import ThemedText from "../components/Themed/ThemedText";
 import CustomButton from "../components/CustomButton";
-import { useAppStore } from "../store/useAppStore";
+import { useEventStore } from "../store/useEventStore";
 import { useAddExam } from "../hooks/useAddExam";
 import ExamForm from "../components/AddExamScreen/ExamForm";
 import ChapterList from "../components/AddExamScreen/ChapterList";
@@ -22,7 +22,7 @@ export default function AddExamScreen() {
   const [contents, setContents] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const events = useAppStore((s) => s.events);
+  const events = useEventStore((s) => s.allEvents);
   const { addExam, loading } = useAddExam({ events });
   const resetForm = () => {
     setTitle("");

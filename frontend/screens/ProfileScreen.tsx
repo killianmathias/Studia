@@ -33,6 +33,7 @@ const { width, height } = Dimensions.get("window");
 import * as ImagePicker from "expo-image-picker";
 import LoadImageButton from "../components/ProfileScreen/LoadImageButton";
 import { useAlert } from "../components/CustomAlertService";
+import { useAuthStore } from "../store/useAuthStore";
 
 async function logOut() {
   const {
@@ -46,22 +47,23 @@ async function logOut() {
 // --- Screens ---
 export default function ProfileScreen() {
   const { theme, setMode, mode } = useContext(ThemeContext);
-  const [username, setUsername] = useState("username");
-  const [name, setName] = useState("");
-  const [surname, setSurname] = useState("");
-  const [birthday, setBirthday] = useState(new Date(Date.now()));
-  const [email, setEmail] = useState("");
-  const [profilePicture, setProfilePicture] = useState("");
-  const [level, setLevel] = useState("");
+  const profile = useAuthStore((s) => s.profile);
+  const [username, setUsername] = useState(profile?.username || "username");
+  const [name, setName] = useState(profile?.name);
+  const [surname, setSurname] = useState(profile?.name);
+  const [birthday, setBirthday] = useState(
+    profile?.date_of_birth || new Date(Date.now())
+  );
+  const [email, setEmail] = useState(profile?.email);
+  const [profilePicture, setProfilePicture] = useState(
+    profile?.profile_picture
+  );
+  const [level, setLevel] = useState(profile?.level);
   const [loading, setLoading] = useState(false);
-  const [visitorId, setVisitorId] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [isConnectedApple, setIsConnectedApple] = useState(false);
   const [isConnectedGoogle, setIsConnectedGoogle] = useState(false);
-  const route = useRoute();
   const { showAlert } = useAlert();
-
-  const { userId } = route.params;
 
   const openModal = () => {
     setModalVisible(true);
@@ -69,54 +71,6 @@ export default function ProfileScreen() {
   const closeModal = () => {
     setModalVisible(false);
   };
-  useEffect(() => {
-    setLoading(true);
-    async function fetchUser() {
-      const userInfos = useUserInfos(userId);
-      console.log("UserInfos", userInfos);
-      if (userInfos) {
-        setName(userInfos.name);
-        setSurname(userInfos.surname);
-        setBirthday(new Date(userInfos.date_of_birth));
-        setEmail(userInfos.email);
-        setLevel(userInfos.level);
-        setProfilePicture(userInfos.profile_picture);
-        setUsername(userInfos.username);
-      } else {
-        await showAlert({
-          type: "error",
-          title: "Erreur",
-          message: "Impossible de récupérer vos informations",
-          buttons: [{ text: "OK", value: true }],
-        });
-      }
-    }
-    async function fetchIsConnected() {
-      const { data, error } = await supabase
-        .from("User_providers")
-        .select("provider")
-        .eq("provider_user_id", userId);
-      if (error) {
-        await showAlert({
-          type: "error",
-          title: "Erreur",
-          message: "Impossible de trouver les différents providers.",
-          buttons: [{ text: "OK", value: true }],
-        });
-        return;
-      }
-      for (const provider in data) {
-        if (provider.provider === "apple") {
-          setIsConnectedApple(true);
-        } else if (provider.provider === "google") {
-          setIsConnectedGoogle(true);
-        }
-      }
-    }
-    fetchUser();
-    fetchIsConnected();
-    setLoading(false);
-  }, []);
 
   async function edit() {
     if (editing == false) {
@@ -138,82 +92,7 @@ export default function ProfileScreen() {
   }
 
   async function saveChanges() {
-    const { data: providerData, error: idError } = await supabase
-      .from("User_providers")
-      .select("user_id")
-      .eq("provider_user_id", visitorId)
-      .eq("provider", "email");
-
-    if (idError || !providerData || providerData.length === 0) {
-      await showAlert({
-        type: "error",
-        title: "Erreur",
-        message: "Utilisateur introuvable",
-        buttons: [{ text: "OK", value: true }],
-      });
-      return;
-    }
-    const userId = providerData[0].user_id;
-
-    const { data: emailDatabase, error: emailError } = await supabase
-      .from("Users")
-      .select("email")
-      .eq("id", userId);
-
-    if (emailError || !emailDatabase || emailDatabase.length === 0) {
-      await showAlert({
-        type: "error",
-        title: "Erreur",
-        message: "Impossible de récupérer l'adresse email actuelle",
-        buttons: [{ text: "OK", value: true }],
-      });
-      return;
-    }
-
-    // 🔹 Mise à jour de l'auth si besoin
-    if (email !== emailDatabase[0].email) {
-      const { error: authError } = await supabase.auth.updateUser({ email });
-      if (authError) {
-        await showAlert({
-          type: "error",
-          title: "Erreur",
-          message: "Une erreur est survenue lors du changement de l'email",
-          buttons: [{ text: "OK", value: true }],
-        });
-        return; // on stoppe ici pour éviter une désyncro
-      }
-    }
-
-    // 🔹 Mise à jour de la table Users
-    const { error: updateError } = await supabase
-      .from("Users")
-      .update({
-        name,
-        surname,
-        date_of_birth: birthday,
-        level,
-        profile_picture: profilePicture,
-        email,
-        username,
-      })
-      .eq("id", userId);
-
-    if (updateError) {
-      await showAlert({
-        type: "error",
-        title: "Erreur",
-        message: "Une erreur est survenue lors de la sauvegarde",
-        buttons: [{ text: "OK", value: true }],
-      });
-    } else {
-      await showAlert({
-        type: "success",
-        title: "Succès",
-        message: "Votre action a été effectuée ✅",
-        buttons: [{ text: "OK", value: true }],
-      });
-      setEditing(false);
-    }
+    console.log("save");
   }
 
   const [editing, setEditing] = useState(false);
@@ -224,25 +103,21 @@ export default function ProfileScreen() {
       ) : (
         <>
           <View style={styles.profileHeader}>
-            {visitorId === userId ? (
-              <EditButton onPress={() => edit()} editing={editing} />
-            ) : (
-              <></>
-            )}
+            <EditButton onPress={() => edit()} editing={editing} />
           </View>
 
           <XPProgressCircle
             imageUri={profilePicture}
             size={width / 4}
             strokeWidth={5}
-            uid={userId}
           />
           {editing ? (
-            <LoadImageButton
-              setLoading={setLoading}
-              setProfilePicture={setProfilePicture}
-              userId={userId}
-            />
+            // <LoadImageButton
+            //   setLoading={setLoading}
+            //   setProfilePicture={setProfilePicture}
+            //   userId={userId}
+            // />
+            <></>
           ) : (
             <View style={styles.usernameContainer}>
               <ThemedText style={styles.username} type="subtitle">
@@ -300,15 +175,11 @@ export default function ProfileScreen() {
             </View>
           ) : (
             <>
-              {userId === visitorId ? (
-                <View style={styles.themeButtonContainer}>
-                  <ThemeSelector />
-                </View>
-              ) : (
-                <></>
-              )}
-              <Stats userId={userId} />
-              {userId === visitorId ? <LogoutButton /> : <></>}
+              <View style={styles.themeButtonContainer}>
+                <ThemeSelector />
+              </View>
+              <Stats />
+              <LogoutButton />
             </>
           )}
           <Modal

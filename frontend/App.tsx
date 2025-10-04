@@ -30,7 +30,8 @@ import OtherProfileScreen from "./screens/OtherProfileScreen";
 import { CustomAlertProvider } from "./components/CustomAlertService";
 import ThemedText from "./components/Themed/ThemedText";
 import EventDetailScreen from "./screens/EventDetailScreen";
-import { useAppStore } from "./store/useAppStore";
+import { useUiStore } from "./store/useUIStore";
+import { useAuthStore } from "./store/useAuthStore";
 
 // --- Définition des types ---
 export type RootStackParamList = {
@@ -148,57 +149,41 @@ function MainTabs() {
 // --- App principale ---
 export default function App() {
   const { theme } = useContext(ThemeContext);
-  const [session, setSession] = useState<Session | null>(null);
-  const [isProfileComplete, setIsProfileComplete] = useState(false);
-  const loading = useAppStore((s) => s.loading);
-  const load = useAppStore((s) => s.load);
-  const stopLoad = useAppStore((s) => s.stopLoad);
+
+  // Zustand store
+  const { session, initialize, profile } = useAuthStore();
+  const loading = useUiStore((s) => s.loading);
+  const load = useUiStore((s) => s.load);
+  const stopLoad = useUiStore((s) => s.stopLoad);
+  console.log(profile);
+
+  const isProfileComplete = !!profile?.surname; // exemple : considérer le profil complet si username existe
 
   useEffect(() => {
-    let subscription: any;
-    load();
-    async function init() {
-      // 1. Vérifier la session initiale
-      const { data } = await supabase.auth.getSession();
-      setSession(data.session);
+    let authListener: any;
 
-      // 2. Charger profil si déjà connecté
-      if (data.session?.user?.id) {
-        await checkUserProfile(data.session.user.id);
-      }
+    async function initApp() {
+      load();
+
+      // Initialise le store auth : récupère session et profile via le trigger Supabase
+      await initialize();
+
       stopLoad();
-    }
 
-    // Fonction séparée pour vérifier le profil
-    async function checkUserProfile(userId: string) {
-      const { data: user, error } = await supabase
-        .from("User_providers")
-        .select("*")
-        .eq("provider_user_id", userId)
-        .maybeSingle();
-
-      if (error) console.error("Erreur profil:", error);
-
-      setIsProfileComplete(!!user);
-    }
-
-    init();
-
-    // 3. Ecouter les changements d’auth
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (_event, newSession) => {
-        setSession(newSession);
-        if (newSession?.user?.id) {
-          await checkUserProfile(newSession.user.id);
-        } else {
-          setIsProfileComplete(false);
+      // Ecoute les changements d’auth
+      const { data } = supabase.auth.onAuthStateChange(
+        async (_event, newSession) => {
+          // initialize() gère déjà la récupération du profil
+          await initialize();
         }
-      }
-    );
+      );
+      authListener = data;
+    }
+
+    initApp();
 
     return () => {
-      authListener.subscription.unsubscribe();
-      if (subscription) supabase.removeSubscription(subscription);
+      if (authListener?.subscription) authListener.subscription.unsubscribe();
     };
   }, []);
 
@@ -216,18 +201,23 @@ export default function App() {
     <ThemeProvider>
       <CustomAlertProvider>
         <NavigationContainer>
-          {session && isProfileComplete ? (
-            <MainTabs />
+          {session ? (
+            isProfileComplete ? (
+              <MainTabs />
+            ) : (
+              <Stack.Navigator screenOptions={{ headerShown: false }}>
+                <Stack.Screen
+                  name="RegisterStep2"
+                  component={RegisterStep2Screen}
+                />
+              </Stack.Navigator>
+            )
           ) : (
             <Stack.Navigator screenOptions={{ headerShown: false }}>
               <Stack.Screen name="Connexion" component={LoginScreen} />
               <Stack.Screen
                 name="RegisterStep1"
                 component={RegisterStep1Screen}
-              />
-              <Stack.Screen
-                name="RegisterStep2"
-                component={RegisterStep2Screen}
               />
             </Stack.Navigator>
           )}

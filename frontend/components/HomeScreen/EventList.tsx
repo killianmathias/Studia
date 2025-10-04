@@ -16,7 +16,7 @@ import { CalendarEvent, Section } from "../../types/types";
 import { SupabaseEvent } from "../../types/types";
 import CustomButton from "../CustomButton";
 import { useNavigation } from "@react-navigation/native";
-import { useAppStore } from "../../store/useAppStore";
+import { useEventStore } from "../../store/useEventStore";
 import { fetchGoogleEvents, useStudiaEvents } from "../../functions/events";
 
 const formatDate = (date: Date): string => {
@@ -60,7 +60,7 @@ const EventList = () => {
   const { theme } = useContext(ThemeContext);
   const navigation = useNavigation();
   useStudiaEvents();
-  const events = useAppStore((s) => s.studiaEvents);
+  const events = useEventStore((s) => s.studiaEvents);
 
   const sections = groupEventsByDay(events);
   const renderItem = ({ item }: { item: Event }) => (

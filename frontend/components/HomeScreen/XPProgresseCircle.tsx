@@ -1,12 +1,6 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
-import {
-  View,
-  Image,
-  StyleSheet,
-  Text,
-  Dimensions,
-  Animated,
-} from "react-native";
+import { View, StyleSheet, Text, Dimensions, Animated } from "react-native";
+import { Image } from "expo-image";
 import Svg, { Circle } from "react-native-svg";
 import { ThemeContext } from "../../context/ThemeContext";
 import {
@@ -14,6 +8,7 @@ import {
   getSignedUrlFromPath,
   useUserXp,
 } from "../../functions/functions";
+import { useAuthStore } from "../../store/useAuthStore";
 
 const { height } = Dimensions.get("window");
 
@@ -21,7 +16,6 @@ interface XPProgressCircleProps {
   size: number;
   strokeWidth: number;
   imageUri: string;
-  uid: string;
 }
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -30,13 +24,12 @@ export default function XPProgressCircle({
   size,
   strokeWidth,
   imageUri,
-  uid,
 }: XPProgressCircleProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
 
   const { theme } = useContext(ThemeContext);
-  const userXp = useUserXp(uid);
+  const userXp = useAuthStore((s) => s.profile?.xp);
   const [signedUrl, setSignedUrl] = useState("");
   const [level, setLevel] = useState(0);
   const [progress, setProgress] = useState(0); // 0 à 1
@@ -115,6 +108,7 @@ export default function XPProgressCircle({
           top: strokeWidth,
           left: strokeWidth,
         }}
+        cachePolicy="disk"
       />
 
       <View

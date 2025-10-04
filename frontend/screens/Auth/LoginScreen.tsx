@@ -18,8 +18,10 @@ import { ThemeContext } from "../../context/ThemeContext";
 import { SignInWithApple } from "./SignInWithApple";
 import TextualButton from "../../components/TextualButton";
 import { useAlert } from "../../components/CustomAlertService";
-import GoogleAuth from "../../components/GoogleAuth";
-import GoogleSignInButton from "../../components/GoogleAuth";
+// import GoogleAuth from "../../components/GoogleAuth";
+// import GoogleSignInButton from "../../components/GoogleAuth";
+import { useAuthStore } from "../../store/useAuthStore";
+import ThemedSafeAreaView from "../../components/Themed/ThemedSafeAreaView";
 const { width, height } = Dimensions.get("window");
 
 const LoginScreen = () => {
@@ -28,37 +30,11 @@ const LoginScreen = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { theme, setMode, mode } = useContext(ThemeContext);
-  async function signInWithEmail() {
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
-    });
-
-    if (error) {
-      if (error.message === "Invalid login credentials") {
-        await showAlert({
-          type: "error",
-          title: "Erreur",
-          message: "Identifiants incorrects !",
-          buttons: [{ text: "OK", value: true }],
-        });
-        return;
-      } else {
-        await showAlert({
-          type: "error",
-          title: "Erreur",
-          message: "Une erreur est survenue :" + error.message,
-          buttons: [{ text: "OK", value: true }],
-        });
-      }
-    }
-    setLoading(false);
-  }
+  const signInWithEmail = useAuthStore((s) => s.login);
   const navigation = useNavigation();
 
   return (
-    <SafeAreaView
+    <ThemedSafeAreaView
       style={[
         styles.container,
         {
@@ -99,7 +75,7 @@ const LoginScreen = () => {
 
       <View style={[styles.verticallySpaced, styles.mt20]}>
         <CustomButton
-          onPress={() => signInWithEmail()}
+          onPress={() => signInWithEmail(email, password)}
           title="Se connecter"
           disabled={loading}
         />
@@ -113,7 +89,7 @@ const LoginScreen = () => {
         <View style={[styles.line, { backgroundColor: theme.textsecondary }]} />
       </View>
       <View style={styles.otherLoginContainer}>
-        <GoogleSignInButton />
+        {/* <GoogleSignInButton /> */}
         <SignInWithApple />
       </View>
       <View style={[styles.verticallySpaced, styles.mt20]}>
@@ -126,7 +102,7 @@ const LoginScreen = () => {
           onPress={() => navigation.navigate("RegisterStep1")}
         />
       </View>
-    </SafeAreaView>
+    </ThemedSafeAreaView>
   );
 };
 

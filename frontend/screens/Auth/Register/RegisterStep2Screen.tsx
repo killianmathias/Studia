@@ -18,6 +18,7 @@ import { ThemeContext } from "../../../context/ThemeContext";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import LoadImageButton from "../../../components/ProfileScreen/LoadImageButton";
 import { fetchUserId } from "../../../functions/user";
+import { useAuthStore } from "../../../store/useAuthStore";
 
 const { width, height } = Dimensions.get("window");
 
@@ -31,30 +32,22 @@ function calculateAge(birthDate) {
 }
 
 const RegisterStep2Screen = () => {
-  const route = useRoute();
-  const { email, password, provider, authUser } = route.params || {};
-  const names = authUser?.user_metadata?.full_name.split(" ");
-  const [profile_picture, setProfile_picture] = useState(
-    authUser?.user_metadata?.avatar_url || ""
-  );
-  const [username, setUsername] = useState("");
-  const [surname, setSurname] = useState(
-    authUser?.user_metadata?.family_name || names[0] || ""
-  );
-  const [name, setName] = useState(
-    authUser?.user_metadata?.given_name || names[1] || ""
-  );
-  const [dateOfBirth, setDateOfBirth] = useState(null);
+  const { user, profile } = useAuthStore();
+  const [surname, setSurname] = useState(profile?.surname || "");
+  const [name, setName] = useState(profile?.name || "");
+  const [username, setUsername] = useState(profile?.username || "");
+
+  const [dateOfBirth, setDateOfBirth] = useState(new Date());
   const [level, setLevel] = useState("");
   const [checked, setChecked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [age, setAge] = useState(0);
   const { theme } = useContext(ThemeContext);
+  const updateProfile = useAuthStore((s) => s.updateProfile);
 
   useEffect(() => {
     if (dateOfBirth) setAge(calculateAge(dateOfBirth));
   }, [dateOfBirth]);
-
   const navigation = useNavigation();
 
   async function finishRegistration() {
@@ -74,81 +67,14 @@ const RegisterStep2Screen = () => {
     }
 
     setLoading(true);
-
-    try {
-      let user = authUser;
-
-      // Utilisateur email classique
-      if (provider !== "google" && provider !== "apple" && email && password) {
-        const { data, error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
-        user = data.user;
-      }
-
-      if (!user) throw new Error("Utilisateur non trouvé");
-
-      // Vérifier si l'utilisateur existe déjà
-      const { data: existingUser } = await supabase
-        .from("Users")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      let newUserId = user.id;
-      let authId = await fetchUserId();
-
-      if (!existingUser) {
-        const { data: newUser, error: dbError } = await supabase
-          .from("Users")
-          .insert([
-            {
-              email: user.email,
-              name,
-              surname,
-              level,
-              date_of_birth: dateOfBirth,
-              username,
-              profile_picture,
-            },
-          ])
-          .select()
-          .single();
-
-        if (dbError) throw dbError;
-        newUserId = newUser.id;
-
-        await supabase.from("User_providers").insert([
-          {
-            user_id: newUserId,
-            provider_user_id: authId,
-            provider: provider || "email",
-          },
-        ]);
-      } else {
-        await supabase
-          .from("Users")
-          .update({
-            username,
-            name,
-            surname,
-            date_of_birth: dateOfBirth,
-            level,
-            profile_picture,
-          })
-          .eq("id", newUserId);
-      }
-
-      // Succès → redirection immédiate
-      Alert.alert("Inscription réussie !");
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "MainTabs" as never }], // 👈 Il faut donner un vrai nom à ton composant MainTabs
-      });
-    } catch (err: any) {
-      Alert.alert("Erreur", err.message);
-    } finally {
-      setLoading(false);
-    }
+    updateProfile({
+      username: username,
+      name: name,
+      surname: surname,
+      date_of_birth: dateOfBirth,
+      level: level,
+    });
+    setLoading(false);
   }
 
   return (

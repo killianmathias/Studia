@@ -5,10 +5,12 @@ import ThemedText from "../Themed/ThemedText";
 import { getUserStats } from "../../functions/stats";
 import { supabase } from "../../lib/supabase";
 import { formatTwoDigits } from "../../functions/functions";
+import { useAuthStore } from "../../store/useAuthStore";
 const { width, height } = Dimensions.get("window");
 
-const Stats = ({ userId }) => {
+const Stats = () => {
   const { theme } = useContext(ThemeContext);
+  const userId = useAuthStore((s) => s.profile?.id);
   const [stats, setStats] = useState({ nbSession: 0 });
   useEffect(() => {
     async function getStats() {
