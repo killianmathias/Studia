@@ -18,7 +18,9 @@ const CustomDatePicker = ({ value, onChange }) => {
   const today = new Date();
   const [visible, setVisible] = useState(false);
 
-  const [day, setDay] = useState(value ? value.getDate() : today.getDate());
+  const [day, setDay] = useState(
+    value ? new Date(value).getDate() : today.getDate()
+  );
   const [month, setMonth] = useState(
     value ? value.getMonth() + 1 : today.getMonth() + 1
   );

@@ -21,6 +21,7 @@ import {
 import { supabase } from "../../lib/supabase";
 import { useNavigation } from "@react-navigation/native";
 import { useAlert } from "../CustomAlertService";
+import { useAuthStore } from "../../store/useAuthStore";
 
 const Item = ({ id, title, xp, imageUri, userId, refreshFriends }) => {
   const [signedUrl, setSignedUrl] = useState(null);
@@ -113,16 +114,8 @@ const Item = ({ id, title, xp, imageUri, userId, refreshFriends }) => {
 
 const ListOfFriends = ({ user_id }) => {
   const [friends, setFriends] = useState([]);
-  const [userId, setUserId] = useState("");
+  const userId = useAuthStore((s) => s.profile?.id);
   const { theme } = useContext(ThemeContext);
-
-  useEffect(() => {
-    async function fetchUserId() {
-      const id = await fetchUserIdFromUsers(user_id);
-      setUserId(id);
-    }
-    fetchUserId();
-  }, [user_id]);
 
   async function fetchFriends() {
     if (!userId) return;

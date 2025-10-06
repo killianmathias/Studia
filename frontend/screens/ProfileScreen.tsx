@@ -7,7 +7,6 @@ import {
   Text,
   Dimensions,
   ActivityIndicator,
-  ScrollView,
 } from "react-native";
 import ThemedSafeAreaView from "../components/Themed/ThemedSafeAreaView";
 import ThemedText from "../components/Themed/ThemedText";
@@ -15,23 +14,17 @@ import { supabase } from "../lib/supabase";
 import { useContext, useEffect, useState } from "react";
 import { ThemeContext } from "../context/ThemeContext";
 import EditButton from "../components/ProfileScreen/EditButton";
-import ThemeButton from "../components/ProfileScreen/ThemeButton";
 import ThemeSelector from "../components/ProfileScreen/ThemeSelector";
 import LogoutButton from "../components/ProfileScreen/LogoutButton";
 import Input from "../components/Input";
-import { useUserInfos } from "../functions/functions";
-import { fetchUserId } from "../functions/user";
 import CustomDatePicker from "../components/CustomDatePicker";
 import LevelPicker from "../components/LevelPicker";
 import XPProgressCircle from "../components/HomeScreen/XPProgresseCircle";
 import Stats from "../components/ProfileScreen/Stats";
-import { useRoute } from "@react-navigation/native";
 import { SignInWithApple } from "./Auth/SignInWithApple";
 import { Modal } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 const { width, height } = Dimensions.get("window");
-import * as ImagePicker from "expo-image-picker";
-import LoadImageButton from "../components/ProfileScreen/LoadImageButton";
 import { useAlert } from "../components/CustomAlertService";
 import { useAuthStore } from "../store/useAuthStore";
 
@@ -48,22 +41,29 @@ async function logOut() {
 export default function ProfileScreen() {
   const { theme, setMode, mode } = useContext(ThemeContext);
   const profile = useAuthStore((s) => s.profile);
-  const [username, setUsername] = useState(profile?.username || "username");
-  const [name, setName] = useState(profile?.name);
-  const [surname, setSurname] = useState(profile?.name);
-  const [birthday, setBirthday] = useState(
-    profile?.date_of_birth || new Date(Date.now())
-  );
-  const [email, setEmail] = useState(profile?.email);
-  const [profilePicture, setProfilePicture] = useState(
-    profile?.profile_picture
-  );
-  const [level, setLevel] = useState(profile?.level);
+  const [username, setUsername] = useState("");
+  const [name, setName] = useState("");
+  const [surname, setSurname] = useState("");
+  const [birthday, setBirthday] = useState(new Date(Date.now()));
+  const [email, setEmail] = useState("");
+  const [profilePicture, setProfilePicture] = useState("");
+  const [level, setLevel] = useState("");
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [isConnectedApple, setIsConnectedApple] = useState(false);
   const [isConnectedGoogle, setIsConnectedGoogle] = useState(false);
   const { showAlert } = useAlert();
+  const updateProfile = useAuthStore((s) => s.updateProfile);
+
+  useEffect(() => {
+    setUsername(profile?.username || "username");
+    setName(profile?.name);
+    setSurname(profile?.surname);
+    setBirthday(new Date(profile?.date_of_birth));
+    setEmail(profile?.email);
+    setProfilePicture(profile?.profile_picture);
+    setLevel(profile?.level);
+  }, [profile]);
 
   const openModal = () => {
     setModalVisible(true);
@@ -92,7 +92,60 @@ export default function ProfileScreen() {
   }
 
   async function saveChanges() {
-    console.log("save");
+    const {
+      data: { user },
+      error: getUserError,
+    } = await supabase.auth.getUser();
+
+    if (getUserError || !user) {
+      await showAlert({
+        type: "error",
+        title: "Erreur",
+        message: "Impossible de récupérer l'utilisateur connecté.",
+        buttons: [{ text: "OK", value: true }],
+      });
+      setEditing(false);
+      return;
+    }
+
+    const cleanEmail = email.normalize("NFKC").trim().toLowerCase();
+    const currentEmail = user.email?.trim().toLowerCase();
+
+    if (cleanEmail !== currentEmail) {
+      const { data, error } = await supabase.auth.updateUser({
+        email: cleanEmail,
+      });
+
+      if (error) {
+        await showAlert({
+          type: "error",
+          title: "Erreur",
+          message: "Impossible de mettre à jour l'email : " + error.message,
+          buttons: [{ text: "OK", value: true }],
+        });
+        console.log(error);
+        setEditing(false);
+        return;
+      }
+    }
+
+    await updateProfile({
+      username,
+      name,
+      surname,
+      date_of_birth: birthday,
+      level,
+      email: cleanEmail,
+    });
+
+    await showAlert({
+      type: "success",
+      title: "Succès",
+      message: "Votre compte a bien été mis à jour !",
+      buttons: [{ text: "OK", value: true }],
+    });
+
+    setEditing(false);
   }
 
   const [editing, setEditing] = useState(false);

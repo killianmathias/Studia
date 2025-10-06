@@ -20,10 +20,23 @@ import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { fetchUserId } from "../../functions/user";
 import { useAlert } from "../CustomAlertService";
+import { useAuthStore } from "../../store/useAuthStore";
 
 const { height, width } = Dimensions.get("window");
 
-const Item = ({ id, title, xp, imageUri, myId }) => {
+const Item = ({
+  id,
+  title,
+  xp,
+  imageUri,
+  myId,
+}: {
+  id: number;
+  title: string;
+  xp: number;
+  imageUri: string;
+  myId: number;
+}) => {
   const [loading, setLoading] = useState(false);
   const [signedUrl, setSignedUrl] = useState(null);
   const navigation = useNavigation();
@@ -147,16 +160,14 @@ const Item = ({ id, title, xp, imageUri, myId }) => {
             }
           />
         </View>
-        <View style={styles.textContainer}>
+        <View>
           <ThemedText
             type="subtitle"
             style={[styles.text, { color: theme.textprimary }]}
           >
             @{title}
           </ThemedText>
-          <ThemedText
-            style={[styles.playerLevel, { color: theme.textsecondary }]}
-          >
+          <ThemedText style={[{ color: theme.textsecondary }]}>
             Niveau {getLevelFromXp(xp).level}
           </ThemedText>
         </View>
@@ -177,28 +188,11 @@ const Item = ({ id, title, xp, imageUri, myId }) => {
   );
 };
 
-const ListOfAskings = ({ user_id }) => {
+const ListOfAskings = ({ user_id }: { user_id: number }) => {
   const [askings, setAskings] = useState([]);
-  const [userId, setUserId] = useState("");
-  const [myId, setMyId] = useState("");
+  const userId = useAuthStore((s) => s.profile?.id);
   const { theme } = useContext(ThemeContext);
 
-  // ✅ Récupérer mes IDs
-  useEffect(() => {
-    async function fetchMyId() {
-      const id = await fetchUserId();
-      const secondId = await fetchUserIdFromUsers(id);
-      setMyId(secondId);
-    }
-    async function fetchUserIdValue() {
-      const id = await fetchUserIdFromUsers(user_id);
-      setUserId(id);
-    }
-    fetchUserIdValue();
-    fetchMyId();
-  }, [user_id]);
-
-  // ✅ Charger la liste des demandes
   async function fetchAskings() {
     if (!userId) return;
 
@@ -216,7 +210,7 @@ const ListOfAskings = ({ user_id }) => {
     let requesters = data?.map((r) => r.requester) || [];
 
     const { data: askingData, error: askingError } = await supabase
-      .from("Users")
+      .from("profiles")
       .select("*")
       .in("id", requesters);
 
