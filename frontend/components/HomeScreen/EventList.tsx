@@ -66,7 +66,7 @@ const EventList = () => {
   const renderItem = ({ item }: { item: Event }) => (
     <TouchableOpacity
       style={[styles.item, { backgroundColor: theme.surface }]}
-      onPress={() => navigation.navigate("EventDetail", { item: item })}
+      onPress={() => navigation.navigate("EventDetail", { itemId: item.id })}
     >
       <View style={styles.itemTimeContainer}>
         <Text style={[styles.time, { color: theme.textprimary }]}>

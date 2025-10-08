@@ -1,14 +1,12 @@
 import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from "expo-file-system";
-import { Alert, Dimensions } from "react-native";
-import { View, StyleSheet, Button } from "react-native";
+import { Alert, Dimensions, View, StyleSheet } from "react-native";
 import { supabase } from "../../lib/supabase";
 import TextualButton from "../TextualButton";
 
-const { width, height } = Dimensions.get("window");
+const { height } = Dimensions.get("window");
+
 const LoadImageButton = ({ setLoading, setProfilePicture, userId }) => {
   async function pickAndUploadImage() {
-    // Demander la permission
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
       Alert.alert(
@@ -18,7 +16,6 @@ const LoadImageButton = ({ setLoading, setProfilePicture, userId }) => {
       return;
     }
 
-    // Ouvrir la galerie
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -34,40 +31,30 @@ const LoadImageButton = ({ setLoading, setProfilePicture, userId }) => {
       const fileExt = image.uri.split(".").pop() || "jpg";
       const filePath = `${userId}/profile.${fileExt}`;
 
-      // Lire l’image en base64
-      const base64 = await FileSystem.readAsStringAsync(image.uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
+      // ✅ Fetch as blob (modern method)
+      const response = await fetch(image.uri);
+      const blob = await response.blob();
 
-      // Convertir en Uint8Array
-      const byteCharacters = atob(base64);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-
-      // Upload dans Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(filePath, byteArray.buffer, {
-          contentType: "image/jpeg", // tu peux adapter si besoin
+        .upload(filePath, blob, {
+          contentType: blob.type || "image/jpeg",
           upsert: true,
         });
 
       if (uploadError) throw uploadError;
 
-      // Met à jour seulement l’état local
       setProfilePicture(filePath);
-    } catch (err: any) {
+    } catch (err) {
       Alert.alert("Erreur", err.message);
     } finally {
       setLoading(false);
     }
   }
+
   return (
     <View style={styles.changePPButtonContainer}>
-      <TextualButton title="Changer Pdp" onPress={() => pickAndUploadImage()} />
+      <TextualButton title="Changer Pdp" onPress={pickAndUploadImage} />
     </View>
   );
 };

@@ -15,6 +15,7 @@ import { useAlert } from "../components/CustomAlertService";
 import { supabase } from "../lib/supabase";
 import ProgressBar from "../components/DetailScreen/ProgressBar";
 import { FlatList } from "react-native";
+import { useEventStore } from "../store/useEventStore";
 const { height, width } = Dimensions.get("window");
 
 function isSameDay(date1: Date, date2: Date) {
@@ -29,9 +30,12 @@ const EventDetailScreen = () => {
   const navigation = useNavigation();
   const { theme } = useContext(ThemeContext);
   const route = useRoute();
-  const { item } = route.params || {};
-  const date = new Date(item.date);
-  const finalDate = new Date(item.date + item.duration * 60);
+  const { itemId } = route.params || 0;
+  const getEventById = useEventStore((s) => s.getEventById);
+  const item = getEventById(itemId);
+
+  const date = new Date(item?.start);
+  const finalDate = new Date(item?.end);
   const [session, setSession] = useState(null);
   const [exam, setExam] = useState(null);
   const [examContent, setExamContent] = useState(null);
@@ -40,7 +44,7 @@ const EventDetailScreen = () => {
 
   useEffect(() => {
     async function getSession() {
-      if (!item.id) {
+      if (!itemId) {
         await showAlert({
           type: "error",
           title: "Erreur",
@@ -54,7 +58,7 @@ const EventDetailScreen = () => {
       const { data, error } = await supabase
         .from("Session")
         .select("*")
-        .eq("event_id", item.id)
+        .eq("event_id", itemId)
         .single();
       if (error) {
         await showAlert({
@@ -77,9 +81,34 @@ const EventDetailScreen = () => {
         return;
       }
       setSession(data);
+      const { data: contentData, error: contentError } = await supabase
+        .from("Chapters")
+        .select("*")
+        .eq("exam_id", data.exam_id);
+      if (contentError) {
+        await showAlert({
+          type: "error",
+          title: "Erreur",
+          message:
+            "Une erreur est survenue lors de la récupération du contenu de l'examen",
+          buttons: [{ text: "OK", value: true }],
+        });
+        return;
+      }
+      if (!contentData) {
+        await showAlert({
+          type: "error",
+          title: "Erreur",
+          message:
+            "Une erreur est survenue lors de la récupération du contenu de l'examen",
+          buttons: [{ text: "OK", value: true }],
+        });
+        return;
+      }
+      setExamContent(contentData);
     }
     async function getExam() {
-      if (!item.id) {
+      if (!itemId) {
         await showAlert({
           type: "error",
           title: "Erreur",
@@ -93,7 +122,7 @@ const EventDetailScreen = () => {
       const { data, error } = await supabase
         .from("Exam")
         .select("*")
-        .eq("event_id", item.id)
+        .eq("event_id", itemId)
         .single();
       if (error) {
         await showAlert({
@@ -143,15 +172,14 @@ const EventDetailScreen = () => {
       }
       setExamContent(contentData);
     }
+
     if (item.type === "session") {
       getSession();
     } else {
       getExam();
     }
   }, [item]);
-  console.log(session);
-  console.log(exam);
-  console.log(examContent);
+  const duration = (date.getTime() - finalDate.getTime()) / 1000;
   return (
     <ThemedSafeAreaView style={styles.eventDetailContainer}>
       <View style={styles.eventDetailHeader}>
@@ -165,80 +193,110 @@ const EventDetailScreen = () => {
       </View>
 
       <View style={styles.eventDetailContent}>
-        <ThemedText type="title">{item?.title || ""}</ThemedText>
+        <ThemedText type="title" style={styles.center}>
+          {item?.title || "cac"}
+        </ThemedText>
         <ThemedText type="subtitle">{item?.subject || ""}</ThemedText>
         <ThemedText
           style={{
             color: item?.type === "session" ? theme.primary : theme.error,
+            marginBottom: height * 0.02,
           }}
           type="subtitle"
         >
           {item?.type === "session" ? "Session de révision" : "Examen"}
         </ThemedText>
-        <ThemedText type="subtitle">
-          {date.getDate() + "/" + date.getMonth() + "/" + date.getFullYear()}
-        </ThemedText>
-        <ThemedText type="paragraph">
-          {date.getHours() +
-            ":" +
-            date.getMinutes().toString().padStart(2, "0") +
-            "-" +
-            finalDate.getHours() +
-            ":" +
-            finalDate.getMinutes().toString().padStart(2, "0")}
-        </ThemedText>
-        {session && item.type === "session" ? (
-          <View>
-            <ThemedText type="paragraph">{session?.content}</ThemedText>
-            <ProgressBar
-              target={item.duration}
-              progress={session.duration_done}
+        <View style={styles.dates}>
+          <View style={styles.date}>
+            <Ionicons
+              name="calendar"
+              size={height * 0.03}
+              color={theme.textprimary}
             />
-          </View>
-        ) : exam && item.type === "exam" && examContent ? (
-          <FlatList
-            style={{ maxHeight: height * 0.15 }}
-            data={examContent}
-            keyExtractor={(_, i) => i.toString()}
-            renderItem={({ item, index }) => {
-              return (
-                <View
-                  style={[
-                    styles.courseContainer,
-                    {
-                      backgroundColor: theme.surface,
-                      flexDirection: "column",
-                      alignItems: "flex-start",
-                    },
-                  ]}
-                >
-                  <ThemedText
-                    type="subtitle"
-                    style={{ fontWeight: "bold", marginBottom: 5 }}
-                  >
-                    {item.name}
-                  </ThemedText>
 
-                  {/* Liste des parties */}
-                  {item.contents.map((p, i) => (
-                    <ThemedText
-                      key={i}
-                      style={{
-                        color:
-                          p.mastery === "Faible"
-                            ? theme.error
-                            : p.mastery === "Moyen"
-                            ? theme.warning
-                            : theme.success,
-                      }}
+            <ThemedText type="subtitle">
+              {date.getDate() +
+                "/" +
+                date.getMonth() +
+                "/" +
+                date.getFullYear()}
+            </ThemedText>
+          </View>
+          <View style={styles.hour}>
+            <Ionicons
+              name="time"
+              size={height * 0.03}
+              color={theme.textprimary}
+            />
+
+            <ThemedText type="paragraph">
+              {date.getHours() +
+                ":" +
+                date.getMinutes().toString().padStart(2, "0") +
+                "-" +
+                finalDate.getHours() +
+                ":" +
+                finalDate.getMinutes().toString().padStart(2, "0")}
+            </ThemedText>
+          </View>
+        </View>
+        {session && item.type === "session" ? (
+          <>
+            <View style={styles.paragraphContainer}>
+              <ThemedText type="paragraph" style={styles.paragraph}>
+                {session?.content}
+              </ThemedText>
+              <ProgressBar target={duration} progress={session.duration_done} />
+            </View>
+            <View style={styles.flatlistContainer}>
+              <FlatList
+                style={{ maxHeight: height * 0.2 }}
+                data={examContent}
+                keyExtractor={(_, i) => i.toString()}
+                renderItem={({ item, index }) => {
+                  return (
+                    <View
+                      style={[
+                        styles.courseContainer,
+                        {
+                          backgroundColor: theme.surface,
+                        },
+                      ]}
                     >
-                      - {p.type} ({p.mastery})
-                    </ThemedText>
-                  ))}
-                </View>
-              );
-            }}
-          />
+                      <View style={styles.left}>
+                        <ThemedText
+                          type="subtitle"
+                          style={{ fontWeight: "bold" }}
+                        >
+                          {item.name}
+                        </ThemedText>
+                      </View>
+
+                      {/* Liste des parties */}
+                      <View style={styles.right}>
+                        {item.contents.map((p, i) => (
+                          <ThemedText
+                            key={i}
+                            style={{
+                              color:
+                                p.mastery === "Faible"
+                                  ? theme.error
+                                  : p.mastery === "Moyen"
+                                  ? theme.warning
+                                  : theme.success,
+                            }}
+                          >
+                            <Text style={{ fontWeight: "bold" }}>{p.type}</Text>{" "}
+                            ({p.mastery})
+                          </ThemedText>
+                        ))}
+                      </View>
+                    </View>
+                  );
+                }}
+              />
+            </View>
+          </>
         ) : (
           <></>
         )}
@@ -309,6 +367,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: width * 0.04,
+    marginTop: height * 0.04,
   },
   button: {
     width: width * 0.4,
@@ -327,5 +386,53 @@ const styles = StyleSheet.create({
   },
   courseContainer: {
     width: width * 0.9,
+    borderRadius: 10,
+    marginBottom: height * 0.01,
+    padding: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  center: {
+    textAlign: "center",
+  },
+  paragraphContainer: {
+    width: width * 0.8,
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: height * 0.02,
+    marginTop: height * 0.02,
+  },
+  paragraph: {
+    textAlign: "justify",
+  },
+  flatlistContainer: {
+    marginTop: height * 0.04,
+  },
+  left: {
+    width: "60%",
+    flex: 1,
+    flexDirection: "column",
+    justifyContent: "center",
+  },
+  right: {
+    justifyContent: "center",
+    alignItems: "flex-start",
+  },
+  dates: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 20,
+  },
+  date: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: width * 0.02,
+  },
+  hour: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: width * 0.02,
   },
 });

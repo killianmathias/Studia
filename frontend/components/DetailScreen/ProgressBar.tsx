@@ -29,7 +29,13 @@ const ProgressBar = ({
   });
   const { theme } = useContext(ThemeContext);
   return (
-    <View style={[styles.container, { width, height }]}>
+    <View
+      style={[
+        styles.container,
+        { width, height },
+        { backgroundColor: theme.surface },
+      ]}
+    >
       <Animated.View
         style={[
           styles.bar,
@@ -60,7 +66,7 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   text: {
-    color: "#000",
+    color: "white",
     fontWeight: "bold",
   },
 });

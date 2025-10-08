@@ -27,6 +27,7 @@ import { Ionicons } from "@expo/vector-icons";
 const { width, height } = Dimensions.get("window");
 import { useAlert } from "../components/CustomAlertService";
 import { useAuthStore } from "../store/useAuthStore";
+import LoadImageButton from "../components/ProfileScreen/LoadImageButton";
 
 async function logOut() {
   const {
@@ -111,6 +112,8 @@ export default function ProfileScreen() {
     const cleanEmail = email.normalize("NFKC").trim().toLowerCase();
     const currentEmail = user.email?.trim().toLowerCase();
 
+    console.log("Email actuel:", currentEmail, "Email propre:", cleanEmail);
+
     if (cleanEmail !== currentEmail) {
       const { data, error } = await supabase.auth.updateUser({
         email: cleanEmail,
@@ -165,12 +168,13 @@ export default function ProfileScreen() {
             strokeWidth={5}
           />
           {editing ? (
-            // <LoadImageButton
-            //   setLoading={setLoading}
-            //   setProfilePicture={setProfilePicture}
-            //   userId={userId}
-            // />
-            <></>
+            <>
+              <LoadImageButton
+                setLoading={setLoading}
+                setProfilePicture={setProfilePicture}
+                userId={profile?.id}
+              />
+            </>
           ) : (
             <View style={styles.usernameContainer}>
               <ThemedText style={styles.username} type="subtitle">

@@ -9,6 +9,7 @@ interface EventState {
   setGoogleEvents: (e: CalendarEvent[]) => void;
   setAppleEvents: (e: CalendarEvent[]) => void;
   setStudiaEvents: (e: CalendarEvent[]) => void;
+  getEventById: (id: string) => CalendarEvent | undefined;
 }
 
 export const useEventStore = create<EventState>((set, get) => ({
@@ -34,4 +35,7 @@ export const useEventStore = create<EventState>((set, get) => ({
       studiaEvents: e,
       allEvents: [...e, ...get().googleEvents, ...get().appleEvents],
     }),
+  getEventById: (id) => {
+    return get().allEvents.find((event) => event.id === id);
+  },
 }));
