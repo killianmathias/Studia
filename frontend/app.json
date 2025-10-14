@@ -38,7 +38,15 @@
         }
       ]
     },
-    "plugins": ["expo-apple-authentication"],
+    "plugins": [
+      "expo-apple-authentication",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow Studia to access your microphone."
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "6cddeeb6-6359-41a5-94f5-8c870153679b"

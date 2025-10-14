@@ -16,6 +16,7 @@ import { supabase } from "../lib/supabase";
 import ProgressBar from "../components/DetailScreen/ProgressBar";
 import { FlatList } from "react-native";
 import { useEventStore } from "../store/useEventStore";
+import LauchSessionScreen from "./LauchSessionScreen";
 const { height, width } = Dimensions.get("window");
 
 function isSameDay(date1: Date, date2: Date) {
@@ -41,6 +42,8 @@ const EventDetailScreen = () => {
   const [examContent, setExamContent] = useState(null);
   const { showAlert } = useAlert();
   const todayDate = new Date();
+
+  const [launched, setLaunched] = useState(false);
 
   useEffect(() => {
     async function getSession() {
@@ -179,168 +182,180 @@ const EventDetailScreen = () => {
       getExam();
     }
   }, [item]);
-  const duration = (date.getTime() - finalDate.getTime()) / 1000;
+  const duration = (finalDate.getTime() - date.getTime()) / 1000;
+
   return (
-    <ThemedSafeAreaView style={styles.eventDetailContainer}>
-      <View style={styles.eventDetailHeader}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons
-            name="chevron-back"
-            size={height * 0.04}
-            color={theme.textprimary}
-          />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.eventDetailContent}>
-        <ThemedText type="title" style={styles.center}>
-          {item?.title || "cac"}
-        </ThemedText>
-        <ThemedText type="subtitle">{item?.subject || ""}</ThemedText>
-        <ThemedText
-          style={{
-            color: item?.type === "session" ? theme.primary : theme.error,
-            marginBottom: height * 0.02,
-          }}
-          type="subtitle"
-        >
-          {item?.type === "session" ? "Session de révision" : "Examen"}
-        </ThemedText>
-        <View style={styles.dates}>
-          <View style={styles.date}>
-            <Ionicons
-              name="calendar"
-              size={height * 0.03}
-              color={theme.textprimary}
-            />
-
-            <ThemedText type="subtitle">
-              {date.getDate() +
-                "/" +
-                date.getMonth() +
-                "/" +
-                date.getFullYear()}
-            </ThemedText>
-          </View>
-          <View style={styles.hour}>
-            <Ionicons
-              name="time"
-              size={height * 0.03}
-              color={theme.textprimary}
-            />
-
-            <ThemedText type="paragraph">
-              {date.getHours() +
-                ":" +
-                date.getMinutes().toString().padStart(2, "0") +
-                "-" +
-                finalDate.getHours() +
-                ":" +
-                finalDate.getMinutes().toString().padStart(2, "0")}
-            </ThemedText>
-          </View>
-        </View>
-        {session && item.type === "session" ? (
-          <>
-            <View style={styles.paragraphContainer}>
-              <ThemedText type="paragraph" style={styles.paragraph}>
-                {session?.content}
-              </ThemedText>
-              <ProgressBar target={duration} progress={session.duration_done} />
-            </View>
-            <View style={styles.flatlistContainer}>
-              <FlatList
-                style={{ maxHeight: height * 0.2 }}
-                data={examContent}
-                keyExtractor={(_, i) => i.toString()}
-                renderItem={({ item, index }) => {
-                  return (
-                    <View
-                      style={[
-                        styles.courseContainer,
-                        {
-                          backgroundColor: theme.surface,
-                        },
-                      ]}
-                    >
-                      <View style={styles.left}>
-                        <ThemedText
-                          type="subtitle"
-                          style={{ fontWeight: "bold" }}
-                        >
-                          {item.name}
-                        </ThemedText>
-                      </View>
-
-                      {/* Liste des parties */}
-                      <View style={styles.right}>
-                        {item.contents.map((p, i) => (
-                          <ThemedText
-                            key={i}
-                            style={{
-                              color:
-                                p.mastery === "Faible"
-                                  ? theme.error
-                                  : p.mastery === "Moyen"
-                                  ? theme.warning
-                                  : theme.success,
-                            }}
-                          >
-                            <Text style={{ fontWeight: "bold" }}>{p.type}</Text>{" "}
-                            ({p.mastery})
-                          </ThemedText>
-                        ))}
-                      </View>
-                    </View>
-                  );
-                }}
+    <>
+      {launched ? (
+        <LauchSessionScreen duration={duration} />
+      ) : (
+        <ThemedSafeAreaView style={styles.eventDetailContainer}>
+          <View style={styles.eventDetailHeader}>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Ionicons
+                name="chevron-back"
+                size={height * 0.04}
+                color={theme.textprimary}
               />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.eventDetailContent}>
+            <ThemedText
+              type="title"
+              style={[styles.center, { color: theme.primary }]}
+            >
+              {item?.title || ""}
+            </ThemedText>
+            <ThemedText type="subtitle">{item?.subject || ""}</ThemedText>
+            <ThemedText
+              style={{
+                color: item?.type === "session" ? theme.primary : theme.error,
+                marginBottom: height * 0.02,
+              }}
+              type="subtitle"
+            >
+              {item?.type === "session" ? "Session de révision" : "Examen"}
+            </ThemedText>
+            <View style={styles.dates}>
+              <View style={styles.date}>
+                <Ionicons
+                  name="calendar"
+                  size={height * 0.03}
+                  color={theme.textprimary}
+                />
+
+                <ThemedText type="subtitle">
+                  {date.getDate() +
+                    "/" +
+                    date.getMonth() +
+                    "/" +
+                    date.getFullYear()}
+                </ThemedText>
+              </View>
+              <View style={styles.hour}>
+                <Ionicons
+                  name="time"
+                  size={height * 0.03}
+                  color={theme.textprimary}
+                />
+
+                <ThemedText type="paragraph">
+                  {date.getHours() +
+                    ":" +
+                    date.getMinutes().toString().padStart(2, "0") +
+                    "-" +
+                    finalDate.getHours() +
+                    ":" +
+                    finalDate.getMinutes().toString().padStart(2, "0")}
+                </ThemedText>
+              </View>
             </View>
-          </>
-        ) : (
-          <></>
-        )}
-        {isSameDay(date, todayDate) ? (
-          <TouchableOpacity
-            onPress={() => console.log("Effectuer")}
-            style={[styles.button, { backgroundColor: theme.success }]}
-          >
-            <Ionicons
-              name="play"
-              size={height * 0.04}
-              color={theme.textprimary}
-            />
-            <ThemedText type="subtitle">Réviser</ThemedText>
-          </TouchableOpacity>
-        ) : (
-          <></>
-        )}
-        <View style={styles.bottomButtons}>
-          <TouchableOpacity
-            onPress={() => console.log("Reprogrammer")}
-            style={[styles.button, { backgroundColor: theme.primary }]}
-          >
-            <Ionicons
-              name="time"
-              size={height * 0.04}
-              color={theme.textprimary}
-            />
-            <ThemedText type="subtitle">Décaler</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => console.log("Supprimer")}
-            style={[styles.button, { backgroundColor: theme.error }]}
-          >
-            <Ionicons
-              name="trash"
-              size={height * 0.04}
-              color={theme.textprimary}
-            />
-            <ThemedText type="subtitle">Supprimer</ThemedText>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </ThemedSafeAreaView>
+            {session && item.type === "session" ? (
+              <>
+                <View style={styles.paragraphContainer}>
+                  <ThemedText type="paragraph" style={styles.paragraph}>
+                    {session?.content}
+                  </ThemedText>
+                  <ProgressBar
+                    target={duration}
+                    progress={session.duration_done}
+                  />
+                </View>
+                <View style={styles.flatlistContainer}>
+                  <FlatList
+                    style={{ maxHeight: height * 0.2 }}
+                    data={examContent}
+                    keyExtractor={(_, i) => i.toString()}
+                    renderItem={({ item, index }) => {
+                      return (
+                        <View
+                          style={[
+                            styles.courseContainer,
+                            {
+                              backgroundColor: theme.surface,
+                            },
+                          ]}
+                        >
+                          <View style={styles.left}>
+                            <ThemedText
+                              type="subtitle"
+                              style={{ fontWeight: "bold" }}
+                            >
+                              {item.name}
+                            </ThemedText>
+                          </View>
+
+                          {/* Liste des parties */}
+                          <View style={styles.right}>
+                            {item.contents.map((p, i) => (
+                              <ThemedText
+                                key={i}
+                                style={{
+                                  color:
+                                    p.mastery === "Faible"
+                                      ? theme.error
+                                      : p.mastery === "Moyen"
+                                      ? theme.warning
+                                      : theme.success,
+                                }}
+                              >
+                                <Text style={{ fontWeight: "bold" }}>
+                                  {p.type}
+                                </Text>{" "}
+                                ({p.mastery})
+                              </ThemedText>
+                            ))}
+                          </View>
+                        </View>
+                      );
+                    }}
+                  />
+                </View>
+              </>
+            ) : (
+              <></>
+            )}
+            {isSameDay(date, todayDate) ? (
+              <TouchableOpacity
+                onPress={() => setLaunched(true)}
+                style={[styles.button, { backgroundColor: theme.success }]}
+              >
+                <Ionicons name="play" size={height * 0.04} color={"#FFF"} />
+                <ThemedText type="subtitle" style={{ color: "#FFF" }}>
+                  Réviser
+                </ThemedText>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.bottomButtons}>
+                <TouchableOpacity
+                  onPress={() => console.log("Reprogrammer")}
+                  style={[styles.button, { backgroundColor: theme.primary }]}
+                >
+                  <Ionicons
+                    name="time"
+                    size={height * 0.04}
+                    color={theme.textprimary}
+                  />
+                  <ThemedText type="subtitle">Décaler</ThemedText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => console.log("Supprimer")}
+                  style={[styles.button, { backgroundColor: theme.error }]}
+                >
+                  <Ionicons
+                    name="trash"
+                    size={height * 0.04}
+                    color={theme.textprimary}
+                  />
+                  <ThemedText type="subtitle">Supprimer</ThemedText>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </ThemedSafeAreaView>
+      )}
+    </>
   );
 };
 

@@ -38,10 +38,12 @@ const groupEventsByDay = (events: CalendarEvent[]): Section[] => {
   const grouped: Record<string, CalendarEvent[]> = {};
 
   events.forEach((event) => {
-    const key = event.start.toISOString();
-    const dayKey = key.split("T")[0];
-    if (!grouped[dayKey]) grouped[dayKey] = [];
-    grouped[dayKey].push(event);
+    if (event.start > new Date()) {
+      const key = event.start.toISOString();
+      const dayKey = key.split("T")[0];
+      if (!grouped[dayKey]) grouped[dayKey] = [];
+      grouped[dayKey].push(event);
+    }
   });
 
   Object.keys(grouped).forEach((day) => {
@@ -78,7 +80,7 @@ const EventList = () => {
       </View>
       <View style={styles.itemTitleContainer}>
         <Text style={[styles.title, { color: theme.textprimary }]}>
-          {item.title.length > 20 ? item.title.slice(0, 50) + "…" : item.title}
+          {item.title.length > 20 ? item.title.slice(0, 40) + "…" : item.title}
         </Text>
       </View>
       <View

@@ -1,11 +1,5 @@
 import React, { useEffect, useState, useContext } from "react";
-import {
-  View,
-  Pressable,
-  StyleSheet,
-  LayoutChangeEvent,
-  Dimensions,
-} from "react-native";
+import { View, Pressable, StyleSheet, LayoutChangeEvent } from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import Animated, {
   interpolate,
@@ -16,7 +10,7 @@ import Animated, {
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ThemeContext } from "../context/ThemeContext";
-const { height: screenHeight, width: screenWidth } = Dimensions.get("window");
+import { useUiStore } from "../store/useUIStore";
 
 const icons: Record<string, keyof typeof Feather.glyphMap> = {
   home: "home",
@@ -29,8 +23,17 @@ const icons: Record<string, keyof typeof Feather.glyphMap> = {
 const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
   const { theme } = useContext(ThemeContext);
   const [dimensions, setDimensions] = useState({ height: 20, width: 100 });
+  const isRunning = useUiStore((s) => s.isRunning);
 
   const buttonWidth = dimensions.width / state.routes.length;
+  const tabPositionX = useSharedValue(0);
+
+  // TOUJOURS appeler le hook
+  useEffect(() => {
+    tabPositionX.value = withSpring(buttonWidth * state.index, {
+      duration: 1500,
+    });
+  }, [state.index, buttonWidth, tabPositionX]);
 
   const onTabbarLayout = (e: LayoutChangeEvent) => {
     setDimensions({
@@ -39,34 +42,21 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
     });
   };
 
-  const tabPositionX = useSharedValue(0);
-
-  // ✅ Met à jour la position du highlight quand l'onglet actif change
-  useEffect(() => {
-    tabPositionX.value = withSpring(buttonWidth * state.index, {
-      duration: 1500,
-    });
-  }, [state.index, buttonWidth, tabPositionX]);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        {
-          translateX: tabPositionX.value,
-        },
-      ],
-    };
-  });
-
   return (
     <View
-      style={[styles.tabBar, { backgroundColor: theme.surface }]}
+      style={[
+        styles.tabBar,
+        { backgroundColor: theme.surface, opacity: isRunning ? 0.4 : 1 },
+      ]}
       onLayout={onTabbarLayout}
+      pointerEvents={isRunning ? "none" : "auto"} // bloque les clics si running
     >
       {/* Highlight animé */}
       <Animated.View
         style={[
-          animatedStyle,
+          useAnimatedStyle(() => ({
+            transform: [{ translateX: tabPositionX.value }],
+          })),
           {
             position: "absolute",
             backgroundColor: theme.primary,
@@ -77,16 +67,23 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
           },
         ]}
       />
+
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
-        const label =
-          options.tabBarLabel !== undefined
-            ? options.tabBarLabel
-            : options.title !== undefined
-            ? options.title
-            : route.name;
-
+        const label = options.tabBarLabel ?? options.title ?? route.name;
         const isFocused = state.index === index;
+
+        const scale = useSharedValue(isFocused ? 1 : 0);
+
+        const animatedIconStyle = useAnimatedStyle(() => {
+          const scaleValue = interpolate(scale.value, [0, 1], [1, 1.3]);
+          const top = interpolate(scale.value, [0, 1], [0, 75 / 8]);
+          return { transform: [{ scale: scaleValue }], top };
+        });
+
+        const animatedTextStyle = useAnimatedStyle(() => ({
+          opacity: interpolate(scale.value, [0, 1], [1, 0]),
+        }));
 
         const onPress = () => {
           const event = navigation.emit({
@@ -94,33 +91,11 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
             target: route.key,
             canPreventDefault: true,
           });
-
           if (!isFocused && !event.defaultPrevented) {
             navigation.navigate(route.name);
           }
           Haptics.selectionAsync();
         };
-
-        // Animation sur l’icône
-        const scale = useSharedValue(0);
-
-        useEffect(() => {
-          scale.value = withSpring(isFocused ? 1 : 0, { duration: 350 });
-        }, [isFocused, scale]);
-
-        const animatedTextStyle = useAnimatedStyle(() => {
-          const opacity = interpolate(scale.value, [0, 1], [1, 0]);
-          return { opacity };
-        });
-
-        const animatedIconStyle = useAnimatedStyle(() => {
-          const scaleValue = interpolate(scale.value, [0, 1], [1, 1.3]);
-          const top = interpolate(scale.value, [0, 1], [0, 75 / 8]);
-          return {
-            transform: [{ scale: scaleValue }],
-            top,
-          };
-        });
 
         return (
           <Pressable key={route.key} onPress={onPress} style={styles.tabItem}>
@@ -171,21 +146,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 3,
-  },
-  addButtonContainer: {
-    flex: 1,
-    alignItems: "center",
-  },
-  addButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#3498db",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 5,
   },
 });

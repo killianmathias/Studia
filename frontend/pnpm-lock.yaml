@@ -44,9 +44,15 @@ importers:
       expo-apple-authentication:
         specifier: ~8.0.7
         version: 8.0.7(expo@54.0.10(@babel/core@7.28.4)(graphql@16.8.1)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.15)(react@19.1.0))(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.15)(react@19.1.0))
+      expo-audio:
+        specifier: ^1.0.13
+        version: 1.0.13(expo@54.0.10(@babel/core@7.28.4)(graphql@16.8.1)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.15)(react@19.1.0))(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.15)(react@19.1.0))(react@19.1.0)
       expo-auth-session:
         specifier: ^7.0.8
         version: 7.0.8(expo@54.0.10(@babel/core@7.28.4)(graphql@16.8.1)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.15)(react@19.1.0))(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.15)(react@19.1.0))(react@19.1.0)
+      expo-av:
+        specifier: ^16.0.7
+        version: 16.0.7(expo@54.0.10(@babel/core@7.28.4)(graphql@16.8.1)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.15)(react@19.1.0))(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.15)(react@19.1.0))(react@19.1.0)
       expo-checkbox:
         specifier: ~5.0.7
         version: 5.0.7(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.15)(react@19.1.0))(react@19.1.0)
@@ -2235,11 +2241,29 @@ packages:
       react: '*'
       react-native: '*'
 
+  expo-audio@1.0.13:
+    resolution: {integrity: sha512-Z91jMYv/BMpn5Dkyu204RyNl2EpXRx8HgScTYlwRRYewtfTH8NN+bwZQAApn33NwGhW1cIlcuG/XCAeJBr9l4Q==}
+    peerDependencies:
+      expo: '*'
+      react: '*'
+      react-native: '*'
+
   expo-auth-session@7.0.8:
     resolution: {integrity: sha512-kpo2Jva+6uVjk6TmNqWAoqTnULXZaEVa9l4uf8JH32uDMt/iZQhM0fauy7Ww+y910Euhv5djCP7cPj8KWv6cmQ==}
     peerDependencies:
       react: '*'
       react-native: '*'
+
+  expo-av@16.0.7:
+    resolution: {integrity: sha512-QReef6/RYuZ4GekTcZZw5zY26pcPOmHqK6LMgFlPhnsT0ga97HJrgMc63pvIiojDP+q4oIv24g+QPD8ljZu4XQ==}
+    peerDependencies:
+      expo: '*'
+      react: '*'
+      react-native: '*'
+      react-native-web: '*'
+    peerDependenciesMeta:
+      react-native-web:
+        optional: true
 
   expo-checkbox@5.0.7:
     resolution: {integrity: sha512-oACH1MwJ5816ovT5bKQcaPr/5AAK3l+nlC9FxxAhtANXNBav+BjRJT1IqYTfp33b7+FMKx9ZkLmqJHfubolJrQ==}
@@ -7359,6 +7383,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  expo-audio@1.0.13(expo@54.0.10(@babel/core@7.28.4)(graphql@16.8.1)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.15)(react@19.1.0))(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.15)(react@19.1.0))(react@19.1.0):
+    dependencies:
+      expo: 54.0.10(@babel/core@7.28.4)(graphql@16.8.1)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.15)(react@19.1.0))(react@19.1.0)
+      react: 19.1.0
+      react-native: 0.81.4(@babel/core@7.28.4)(@types/react@19.1.15)(react@19.1.0)
+
   expo-auth-session@7.0.8(expo@54.0.10(@babel/core@7.28.4)(graphql@16.8.1)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.15)(react@19.1.0))(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.15)(react@19.1.0))(react@19.1.0):
     dependencies:
       expo-application: 7.0.7(expo@54.0.10(@babel/core@7.28.4)(graphql@16.8.1)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.15)(react@19.1.0))(react@19.1.0))
@@ -7372,6 +7402,12 @@ snapshots:
     transitivePeerDependencies:
       - expo
       - supports-color
+
+  expo-av@16.0.7(expo@54.0.10(@babel/core@7.28.4)(graphql@16.8.1)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.15)(react@19.1.0))(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.15)(react@19.1.0))(react@19.1.0):
+    dependencies:
+      expo: 54.0.10(@babel/core@7.28.4)(graphql@16.8.1)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.15)(react@19.1.0))(react@19.1.0)
+      react: 19.1.0
+      react-native: 0.81.4(@babel/core@7.28.4)(@types/react@19.1.15)(react@19.1.0)
 
   expo-checkbox@5.0.7(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.15)(react@19.1.0))(react@19.1.0):
     dependencies:

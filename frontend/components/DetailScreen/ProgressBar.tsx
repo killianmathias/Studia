@@ -10,10 +10,11 @@ const ProgressBar = ({
   height = 20,
 }) => {
   const animatedValue = useRef(new Animated.Value(0)).current;
+  let realProgress = progress * 60;
 
   useEffect(() => {
     // Calcul du pourcentage
-    const percentage = Math.min(progress / target, 1);
+    const percentage = Math.min(realProgress / target, 1);
 
     // Animation
     Animated.timing(animatedValue, {
@@ -21,7 +22,7 @@ const ProgressBar = ({
       duration: duration,
       useNativeDriver: false, // width n'est pas supporté par useNativeDriver
     }).start();
-  }, [progress, target]);
+  }, [realProgress, target]);
 
   const barWidth = animatedValue.interpolate({
     inputRange: [0, 1],
@@ -44,9 +45,14 @@ const ProgressBar = ({
         ]}
       />
       <View style={styles.textContainer}>
-        <Text style={styles.text}>{`${Math.round(
-          (progress / target) * 100
-        )}%`}</Text>
+        <Text
+          style={[
+            styles.text,
+            {
+              color: realProgress / target > 0.55 ? "#FFF" : theme.textprimary,
+            },
+          ]}
+        >{`${Math.round((realProgress / target) * 100)}%`}</Text>
       </View>
     </View>
   );
@@ -66,7 +72,6 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   text: {
-    color: "white",
     fontWeight: "bold",
   },
 });
