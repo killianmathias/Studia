@@ -17,6 +17,7 @@ import ProgressBar from "../components/DetailScreen/ProgressBar";
 import { FlatList } from "react-native";
 import { useEventStore } from "../store/useEventStore";
 import LauchSessionScreen from "./LauchSessionScreen";
+import { useStudiaEvents } from "../functions/events";
 const { height, width } = Dimensions.get("window");
 
 function isSameDay(date1: Date, date2: Date) {
@@ -34,6 +35,7 @@ const EventDetailScreen = () => {
   const { itemId } = route.params || 0;
   const getEventById = useEventStore((s) => s.getEventById);
   const item = getEventById(itemId);
+  // useStudiaEvents();
 
   const date = new Date(item?.start);
   const finalDate = new Date(item?.end);
@@ -187,7 +189,7 @@ const EventDetailScreen = () => {
   return (
     <>
       {launched ? (
-        <LauchSessionScreen duration={duration} />
+        <LauchSessionScreen duration={duration} id={item.id} />
       ) : (
         <ThemedSafeAreaView style={styles.eventDetailContainer}>
           <View style={styles.eventDetailHeader}>
@@ -317,15 +319,24 @@ const EventDetailScreen = () => {
               <></>
             )}
             {isSameDay(date, todayDate) ? (
-              <TouchableOpacity
-                onPress={() => setLaunched(true)}
-                style={[styles.button, { backgroundColor: theme.success }]}
-              >
-                <Ionicons name="play" size={height * 0.04} color={"#FFF"} />
-                <ThemedText type="subtitle" style={{ color: "#FFF" }}>
-                  Réviser
-                </ThemedText>
-              </TouchableOpacity>
+              !session?.finished ? (
+                <TouchableOpacity
+                  onPress={() => setLaunched(true)}
+                  style={[styles.button, { backgroundColor: theme.success }]}
+                >
+                  <Ionicons name="play" size={height * 0.04} color={"#FFF"} />
+                  <ThemedText type="subtitle" style={{ color: "#FFF" }}>
+                    Réviser
+                  </ThemedText>
+                </TouchableOpacity>
+              ) : (
+                <>
+                  <ThemedText type="subtitle">Session déjà terminée</ThemedText>
+                  <ThemedText type="paragraph">
+                    Temps effectué : {session.duration_done} minutes
+                  </ThemedText>
+                </>
+              )
             ) : (
               <View style={styles.bottomButtons}>
                 <TouchableOpacity

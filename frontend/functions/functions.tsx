@@ -266,3 +266,36 @@ export async function getUserLevel() {
   }
   return data.level;
 }
+
+export function getXpForSessionTime(
+  sessionTime: number,
+  finished: boolean
+): number {
+  const FINISH_BONUS = 30;
+
+  // Sécurité : pas d’XP pour une durée négative ou nulle
+  if (sessionTime <= 0) return 0;
+
+  // Table des paliers de ratio XP/min
+  const xpTiers = [
+    { min: 0, max: 10, ratio: 1 },
+    { min: 10, max: 30, ratio: 1.5 },
+    { min: 30, max: 60, ratio: 2 },
+    { min: 60, max: Infinity, ratio: 2.5 },
+  ];
+
+  // Trouver le bon palier
+  const tier = xpTiers.find(
+    (t) => sessionTime >= t.min && sessionTime < t.max
+  )!;
+
+  // Calcul de base
+  let xp = sessionTime * tier.ratio;
+
+  // Bonus de fin uniquement si la session est terminée
+  if (finished) xp += FINISH_BONUS;
+
+  // (Optionnel) : Plafonner l’XP pour éviter les abus
+  const MAX_XP = 300;
+  return Math.min(Math.round(xp), MAX_XP);
+}

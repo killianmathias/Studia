@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useRef } from "react";
 import { View, Pressable, StyleSheet, LayoutChangeEvent } from "react-native";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import Animated, {
@@ -20,6 +20,69 @@ const icons: Record<string, keyof typeof Feather.glyphMap> = {
   friends: "users",
 };
 
+/** ✅ Sous-composant TabItem : chaque onglet gère ses hooks */
+const TabItem = ({
+  route,
+  index,
+  isFocused,
+  label,
+  iconName,
+  theme,
+  navigation,
+}: any) => {
+  const scale = useSharedValue(isFocused ? 1 : 0);
+
+  useEffect(() => {
+    scale.value = withSpring(isFocused ? 1 : 0, { duration: 350 });
+  }, [isFocused]);
+
+  const animatedIconStyle = useAnimatedStyle(() => {
+    const scaleValue = interpolate(scale.value, [0, 1], [1, 1.3]);
+    const top = interpolate(scale.value, [0, 1], [0, 75 / 8]);
+    return { transform: [{ scale: scaleValue }], top };
+  });
+
+  const animatedTextStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scale.value, [0, 1], [1, 0]),
+  }));
+
+  const onPress = () => {
+    const event = navigation.emit({
+      type: "tabPress",
+      target: route.key,
+      canPreventDefault: true,
+    });
+    if (!isFocused && !event.defaultPrevented) {
+      navigation.navigate(route.name);
+    }
+    Haptics.selectionAsync();
+  };
+
+  return (
+    <Pressable key={route.key} onPress={onPress} style={styles.tabItem}>
+      <Animated.View style={animatedIconStyle}>
+        <Feather
+          name={iconName}
+          size={22}
+          color={isFocused ? theme.surface : theme.primary}
+        />
+      </Animated.View>
+      <Animated.Text
+        style={[
+          {
+            color: isFocused ? theme.surface : theme.primary,
+            fontSize: 14,
+          },
+          animatedTextStyle,
+        ]}
+      >
+        {label}
+      </Animated.Text>
+    </Pressable>
+  );
+};
+
+/** ✅ Composant principal TabBar */
 const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
   const { theme } = useContext(ThemeContext);
   const [dimensions, setDimensions] = useState({ height: 20, width: 100 });
@@ -28,12 +91,11 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
   const buttonWidth = dimensions.width / state.routes.length;
   const tabPositionX = useSharedValue(0);
 
-  // TOUJOURS appeler le hook
   useEffect(() => {
     tabPositionX.value = withSpring(buttonWidth * state.index, {
-      duration: 1500,
+      duration: 600,
     });
-  }, [state.index, buttonWidth, tabPositionX]);
+  }, [state.index, buttonWidth]);
 
   const onTabbarLayout = (e: LayoutChangeEvent) => {
     setDimensions({
@@ -42,6 +104,10 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
     });
   };
 
+  const highlightStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: tabPositionX.value }],
+  }));
+
   return (
     <View
       style={[
@@ -49,14 +115,12 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
         { backgroundColor: theme.surface, opacity: isRunning ? 0.4 : 1 },
       ]}
       onLayout={onTabbarLayout}
-      pointerEvents={isRunning ? "none" : "auto"} // bloque les clics si running
+      pointerEvents={isRunning ? "none" : "auto"}
     >
       {/* Highlight animé */}
       <Animated.View
         style={[
-          useAnimatedStyle(() => ({
-            transform: [{ translateX: tabPositionX.value }],
-          })),
+          highlightStyle,
           {
             position: "absolute",
             backgroundColor: theme.primary,
@@ -72,52 +136,18 @@ const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
         const { options } = descriptors[route.key];
         const label = options.tabBarLabel ?? options.title ?? route.name;
         const isFocused = state.index === index;
-
-        const scale = useSharedValue(isFocused ? 1 : 0);
-
-        const animatedIconStyle = useAnimatedStyle(() => {
-          const scaleValue = interpolate(scale.value, [0, 1], [1, 1.3]);
-          const top = interpolate(scale.value, [0, 1], [0, 75 / 8]);
-          return { transform: [{ scale: scaleValue }], top };
-        });
-
-        const animatedTextStyle = useAnimatedStyle(() => ({
-          opacity: interpolate(scale.value, [0, 1], [1, 0]),
-        }));
-
-        const onPress = () => {
-          const event = navigation.emit({
-            type: "tabPress",
-            target: route.key,
-            canPreventDefault: true,
-          });
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
-          }
-          Haptics.selectionAsync();
-        };
-
+        const iconName = icons[route.name];
         return (
-          <Pressable key={route.key} onPress={onPress} style={styles.tabItem}>
-            <Animated.View style={animatedIconStyle}>
-              <Feather
-                name={icons[route.name]}
-                size={22}
-                color={isFocused ? theme.surface : theme.primary}
-              />
-            </Animated.View>
-            <Animated.Text
-              style={[
-                {
-                  color: isFocused ? theme.surface : theme.primary,
-                  fontSize: 14,
-                },
-                animatedTextStyle,
-              ]}
-            >
-              {label}
-            </Animated.Text>
-          </Pressable>
+          <TabItem
+            key={route.key}
+            route={route}
+            index={index}
+            isFocused={isFocused}
+            label={label}
+            iconName={iconName}
+            theme={theme}
+            navigation={navigation}
+          />
         );
       })}
     </View>
