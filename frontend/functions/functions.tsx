@@ -5,11 +5,12 @@ import { useState, useEffect } from "react";
 import { fetchUserId } from "./user";
 
 export function getXpForLevel(level: number): number {
-  return 100 * level * level;
+  return 100 * (level - 1) * (level - 1);
 }
 
 export function getLevelFromXp(xp: number) {
   let level = 1;
+  // console.log("level 2 : ", getLevelFromXp(2));
   while (xp >= getXpForLevel(level + 1)) {
     level++;
   }

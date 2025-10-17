@@ -1,4 +1,10 @@
-import { StyleSheet, Text, View, Dimensions } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Dimensions,
+  ActivityIndicator,
+} from "react-native";
 import React, { useContext, useEffect, useState } from "react";
 import { ThemeContext } from "../../context/ThemeContext";
 import ThemedText from "../Themed/ThemedText";
@@ -12,70 +18,83 @@ const Stats = () => {
   const { theme } = useContext(ThemeContext);
   const userId = useAuthStore((s) => s.profile?.id);
   const [stats, setStats] = useState({ nbSession: 0 });
+  const [loading, setLoading] = useState(false);
   useEffect(() => {
     async function getStats() {
+      setLoading(true);
       const stats = await getUserStats(userId);
       setStats(stats);
+      setLoading(false);
     }
     getStats();
   }, []);
-
+  console.log(stats);
   return (
     <View style={[styles.statsContainer, { backgroundColor: theme.surface }]}>
-      <View style={styles.titleContainer}>
-        <ThemedText style={styles.title} type="title">
-          Statistiques
-        </ThemedText>
-      </View>
-      <View style={{ flexDirection: "column" }}>
-        {stats.nbSession === 0 ? (
-          <View style={styles.noSession}>
-            <ThemedText style={styles.noSessionText} type="paragraph">
-              Veuillez effectuer au moins une session pour avoir vos
-              statistiques
+      {loading ? (
+        <>
+          <ActivityIndicator />
+        </>
+      ) : (
+        <>
+          <View style={styles.titleContainer}>
+            <ThemedText style={styles.title} type="title">
+              Statistiques
             </ThemedText>
           </View>
-        ) : (
-          <>
-            <View style={styles.rowContainer}>
-              <View style={styles.element}>
-                <ThemedText style={styles.statTitle}>
-                  Nombre de session
-                </ThemedText>
-                <ThemedText style={styles.numberText} type="title">
-                  {stats.nbSession}
+          <View style={{ flexDirection: "column" }}>
+            {stats.nbSession === 0 ? (
+              <View style={styles.noSession}>
+                <ThemedText style={styles.noSessionText} type="paragraph">
+                  Veuillez effectuer au moins une session pour avoir vos
+                  statistiques
                 </ThemedText>
               </View>
-              <View style={styles.element}>
-                <ThemedText style={styles.statTitle}>
-                  Temps en session
-                </ThemedText>
-                <ThemedText style={styles.numberText} type="title">
-                  {formatTwoDigits(stats.totalHours?.hours)}h
-                  {formatTwoDigits(stats.totalHours?.minutes)}
-                </ThemedText>
-              </View>
-            </View>
-            <View style={styles.rowContainer}>
-              <View style={styles.element}>
-                <ThemedText style={styles.statTitle}>
-                  Sessions complétées (%)
-                </ThemedText>
-                <ThemedText style={styles.numberText} type="title">
-                  {stats.percentageFinished}%
-                </ThemedText>
-              </View>
-              <View style={styles.element}>
-                <ThemedText style={styles.statTitle}>Sujet préféré</ThemedText>
+            ) : (
+              <>
+                <View style={styles.rowContainer}>
+                  <View style={styles.element}>
+                    <ThemedText style={styles.statTitle}>
+                      Nombre de session
+                    </ThemedText>
+                    <ThemedText style={styles.numberText} type="title">
+                      {stats.nbSession}
+                    </ThemedText>
+                  </View>
+                  <View style={styles.element}>
+                    <ThemedText style={styles.statTitle}>
+                      Temps en session
+                    </ThemedText>
+                    <ThemedText style={styles.numberText} type="title">
+                      {formatTwoDigits(stats.totalHours?.hours)}h
+                      {formatTwoDigits(stats.totalHours?.minutes)}
+                    </ThemedText>
+                  </View>
+                </View>
+                <View style={styles.rowContainer}>
+                  <View style={styles.element}>
+                    <ThemedText style={styles.statTitle}>
+                      Sessions complétées (%)
+                    </ThemedText>
+                    <ThemedText style={styles.numberText} type="title">
+                      {stats.percentageFinished}%
+                    </ThemedText>
+                  </View>
+                  <View style={styles.element}>
+                    <ThemedText style={styles.statTitle}>
+                      Sujet préféré
+                    </ThemedText>
 
-                <ThemedText style={styles.numberText} type="title">
-                  {stats.favoriteSubject}
-                </ThemedText>
-              </View>
-            </View>
-          </>
-        )}
-      </View>
+                    <ThemedText style={styles.numberText} type="title">
+                      {stats.favoriteSubject}
+                    </ThemedText>
+                  </View>
+                </View>
+              </>
+            )}
+          </View>
+        </>
+      )}
     </View>
   );
 };

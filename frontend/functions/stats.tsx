@@ -123,6 +123,7 @@ export async function getTopSubject(userId: string) {
     console.error("Erreur récupération events :", eventsError.message);
     return null;
   }
+  console.log("Événements", events);
 
   if (!events || events.length === 0) {
     return null;
