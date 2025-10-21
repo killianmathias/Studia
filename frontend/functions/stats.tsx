@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+
 async function getNumberOfSessions(userId) {
   if (!userId) return 0;
 
@@ -17,6 +18,7 @@ async function getNumberOfSessions(userId) {
     console.log("Pas d'événement");
     return 0;
   }
+
   const { count, error: sessionsError } = await supabase
     .from("Session")
     .select("*", { count: "exact", head: true })

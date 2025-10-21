@@ -5,6 +5,7 @@ import MyCalendar from "../components/CustomCalendar";
 import ThemedSafeAreaView from "../components/Themed/ThemedSafeAreaView";
 import Header from "../components/HomeScreen/Header";
 import EventList from "../components/HomeScreen/EventList";
+import Tuto from "../components/Tuto/Tuto";
 
 const HomeScreen = () => {
   return (

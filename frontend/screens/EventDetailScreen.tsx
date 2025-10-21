@@ -18,6 +18,8 @@ import { FlatList } from "react-native";
 import { useEventStore } from "../store/useEventStore";
 import LauchSessionScreen from "./LauchSessionScreen";
 import { useStudiaEvents } from "../functions/events";
+import CustomDateAndTimePicker from "../components/CustomDateAndTimePicker";
+import ReprogramDateAndTimePicker from "../components/ReprogramDateAndTimePicker";
 const { height, width } = Dimensions.get("window");
 
 function isSameDay(date1: Date, date2: Date) {
@@ -39,6 +41,7 @@ const EventDetailScreen = () => {
 
   const date = new Date(item?.start);
   const finalDate = new Date(item?.end);
+  const [selectorDate, setSelectorDate] = useState(date);
   const [session, setSession] = useState(null);
   const [exam, setExam] = useState(null);
   const [examContent, setExamContent] = useState(null);
@@ -46,6 +49,92 @@ const EventDetailScreen = () => {
   const todayDate = new Date();
 
   const [launched, setLaunched] = useState(false);
+
+  const deleteEvent = async () => {
+    // 1️⃣ Confirmation utilisateur
+    const confirmed = await showAlert({
+      type: "confirm",
+      title: "Suppression",
+      message: "Êtes-vous sûr de vouloir supprimer cet événement ?",
+      buttons: [
+        { text: "Non", value: false, style: { backgroundColor: "grey" } },
+        { text: "Oui", value: true },
+      ],
+    });
+
+    if (!confirmed) return;
+
+    try {
+      if (item?.type === "session") {
+        // Supprimer toutes les sessions liées
+        await supabase.from("Session").delete().eq("event_id", itemId);
+
+        // Supprimer l'événement
+        await supabase.from("Event").delete().eq("id", itemId);
+      } else {
+        // Supprimer l'examen
+        const { data: examData, error: examError } = await supabase
+          .from("Exam")
+          .delete()
+          .eq("event_id", itemId)
+          .select("id");
+
+        if (examError || !examData?.length)
+          throw new Error("Impossible de supprimer l'examen");
+
+        // Supprimer toutes les sessions liées à cet examen
+        const examId = examData[0].id;
+        await supabase.from("Session").delete().eq("exam_id", examId);
+
+        // Supprimer l'événement
+        await supabase.from("Event").delete().eq("id", itemId);
+      }
+
+      // Succès
+      await showAlert({
+        type: "success",
+        title: "Succès",
+        message: "Événement supprimé avec succès",
+        buttons: [{ text: "Ok", value: true }],
+      });
+      navigation.goBack();
+    } catch (err: any) {
+      // Gestion d'erreur unique
+      await showAlert({
+        type: "error",
+        title: "Erreur",
+        message: err.message || "Impossible de supprimer l'événement",
+        buttons: [{ text: "Ok", value: true }],
+      });
+    }
+  };
+  const saveNewDate = async (newDate: Date) => {
+    setSelectorDate(newDate);
+
+    const result = await showAlert({
+      type: "confirm",
+      title: "Sauvegarde",
+      message: "Êtes-vous sûr de vouloir sauvegarder vos changements ?",
+      buttons: [
+        { text: "Non", value: false, style: { backgroundColor: "grey" } },
+        { text: "Oui", value: true },
+      ],
+    });
+    if (result) {
+      const { data, error } = await supabase
+        .from("Event")
+        .update({ date: newDate.toISOString() }) // exemple de colonne
+        .eq("id", itemId)
+        .select();
+
+      if (error) {
+        console.error("Erreur de sauvegarde :", error.message);
+        return;
+      }
+
+      console.log("✅ Nouvelle date enregistrée :", data);
+    }
+  };
 
   useEffect(() => {
     async function getSession() {
@@ -339,8 +428,8 @@ const EventDetailScreen = () => {
               )
             ) : (
               <View style={styles.bottomButtons}>
-                <TouchableOpacity
-                  onPress={() => console.log("Reprogrammer")}
+                {/* <TouchableOpacity
+                  onPress={reprogram}
                   style={[styles.button, { backgroundColor: theme.primary }]}
                 >
                   <Ionicons
@@ -349,9 +438,13 @@ const EventDetailScreen = () => {
                     color={theme.textprimary}
                   />
                   <ThemedText type="subtitle">Décaler</ThemedText>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
+                <ReprogramDateAndTimePicker
+                  value={selectorDate}
+                  onChange={saveNewDate}
+                />
                 <TouchableOpacity
-                  onPress={() => console.log("Supprimer")}
+                  onPress={deleteEvent}
                   style={[styles.button, { backgroundColor: theme.error }]}
                 >
                   <Ionicons
@@ -396,12 +489,13 @@ const styles = StyleSheet.create({
     marginTop: height * 0.04,
   },
   button: {
-    width: width * 0.4,
+    padding: 12,
+    borderRadius: 12,
+    marginVertical: 8,
     flexDirection: "row",
     alignItems: "center",
+    width: 0.4 * width,
     justifyContent: "center",
-    height: height * 0.06,
-    borderRadius: 15,
   },
   eventDetailContent: {
     justifyContent: "center",

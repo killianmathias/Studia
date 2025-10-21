@@ -36,8 +36,8 @@ export function useStudiaEvents() {
       const { data, error } = await supabase
         .from("Event")
         .select("*")
-        .eq("user_id", userId);
-
+        .eq("user_id", userId)
+        .gt("date", new Date().toISOString());
       if (error) {
         console.error("Erreur lors de la récupération des events :", error);
         return;
